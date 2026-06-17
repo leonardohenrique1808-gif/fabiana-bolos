@@ -76,7 +76,7 @@ export default function App() {
   };
 
   return (
-    <div className="App">
+ <div className="App">
        <style>{CSS}</style>
        
        {upsellOpen && (
@@ -92,7 +92,7 @@ export default function App() {
             cart={cart} 
             setScreen={setScreen} 
             onPedido={() => setScreen("pedido-info")} 
-            onLogin={() => console.log("Login...")} 
+            onLogin={() => setScreen("admin")} 
          />
        )}
 
@@ -116,5 +116,3 @@ export default function App() {
          <AdminPanel orders={orders} setOrders={setOrders} cfg={cfg} onBack={() => setScreen("home")} />
        )}
     </div>
-  );
-}
