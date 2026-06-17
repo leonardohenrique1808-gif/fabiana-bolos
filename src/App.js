@@ -115,4 +115,6 @@ export default function App() {
        {screen === "admin" && (
          <AdminPanel orders={orders} setOrders={setOrders} cfg={cfg} onBack={() => setScreen("home")} />
        )}
-    </div>
+  </div>
+  );
+}
