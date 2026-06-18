@@ -8,15 +8,19 @@ import { PedidoCart } from "./screens/PedidoCart";
 import { PedidoConfirm } from "./screens/PedidoConfirm";
 import { PedidoDoneScreen } from "./screens/PedidoDone";
 import { AdminPanel } from "./screens/AdminPanel";
-// Importando usando o arquivo exato que você tem:
 import { ClientRegisterScreen } from "./screens/ClientRegister";
-
+import { ClientLoginScreen } from "./screens/ClientLogin";
 import { UpsellModal } from "./components/UpsellModal";
 
 export default function App() {
   const [screen, setScreen] = useState("home");
   const [cart, setCart] = useState([]);
+  
+  // Estados para Usuários e Login
   const [orders, setOrders] = useState(() => LS.get("fab_orders") ?? []);
+  const [clients, setClients] = useState(() => LS.get("fab_clients") ?? []);
+  const [clientUser, setClientUser] = useState(() => LS.get("fab_active_user") ?? null);
+  
   const [pedInfo, setPedInfo] = useState({ entrega: "", hora: "", obs: "", regiao: null, enderecoEntrega: "" });
   const [cfg, setCfg] = useState(() => LS.get("fab_cfg") ?? san(DEFAULT_CFG));
   
@@ -26,40 +30,28 @@ export default function App() {
   const [doneData, setDoneData] = useState({ caucao: 0, wppUrl: "", total: null, saldo: null });
 
   useEffect(() => { LS.set("fab_orders", orders); }, [orders]);
+  useEffect(() => { LS.set("fab_clients", clients); }, [clients]);
+  useEffect(() => { LS.set("fab_active_user", clientUser); }, [clientUser]);
 
   const cartTotal = cart.reduce((s, it) => s + (getPrecoItem(it, cfg.adicionalGourmet) ?? 0), 0);
   const taxaReg = pedInfo.regiao?.isRetirada ? 0 : Number(pedInfo.regiao?.taxa || 0);
   const cartFinal = cartTotal + taxaReg;
-  const cartCaucao = Math.ceil(cartFinal * 0.5);
-  const cartSaldo = cartFinal - cartCaucao;
 
   const confirmarPedidoFinal = (extraItems = []) => {
-    const upsellItems = extraItems.map(u => ({ tipo: "upsell", upsellId: u.id, nome: u.nome, desc: u.desc }));
-    const allCart = [...cart, ...upsellItems];
-    const totalItens = allCart.reduce((s, it) => s + (getPrecoItem(it, cfg.adicionalGourmet) ?? 0), 0);
-    const totalFinal = totalItens + taxaReg;
-    const caucaoFinal = totalFinal ? Math.ceil(totalFinal * 0.5) : 0;
-    const saldoFinal = totalFinal ? totalFinal - caucaoFinal : 0;
-
+    const allCart = [...cart, ...extraItems.map(u => ({ tipo: "upsell", upsellId: u.id, nome: u.nome, desc: u.desc }))];
+    const totalFinal = allCart.reduce((s, it) => s + (getPrecoItem(it, cfg.adicionalGourmet) ?? 0), 0) + taxaReg;
+    
     const novoPedido = san({
       id: Date.now(),
-      nome: "Cliente",
-      entrega: pedInfo.entrega,
-      hora: pedInfo.hora,
+      nome: clientUser?.nome || "Cliente",
       itens: allCart,
       valor: totalFinal,
-      caucao: caucaoFinal,
       status: "Aguardando Caução",
-      checksum: gerarChecksumPedido({ id: Date.now(), valor: totalFinal }),
       criadoEm: new Date().toISOString()
     });
 
     setOrders(p => [...p, novoPedido]);
-    const wppTxt = encodeURIComponent(`Olá! Pedido 🎂\nData: ${fmtDt(pedInfo.entrega)}\nTotal: ${fmtR(totalFinal)}\nCaução: ${fmtR(caucaoFinal)}\nSALDO: ${fmtR(saldoFinal)}`);
-    setDoneData({ caucao: caucaoFinal, wppUrl: `https://wa.me/5531999154485?text=${wppTxt}`, total: totalFinal, saldo: saldoFinal });
-    
     setCart([]);
-    setPedInfo({ entrega: "", hora: "", obs: "", regiao: null, enderecoEntrega: "" });
     setScreen("pedido-done");
   };
 
@@ -68,40 +60,48 @@ export default function App() {
        <style>{CSS}</style>
        
        {upsellOpen && (
-         <UpsellModal 
-           onAdd={(extras) => { setUpsellOpen(false); confirmarPedidoFinal(extras); }} 
-           onSkip={() => { setUpsellOpen(false); confirmarPedidoFinal([]); }} 
-         />
+         <UpsellModal onAdd={(ex) => { setUpsellOpen(false); confirmarPedidoFinal(ex); }} onSkip={() => { setUpsellOpen(false); confirmarPedidoFinal([]); }} />
        )}
 
        {screen === "home" && (
-         <Home NOME_APP={NOME_APP} cart={cart} setScreen={setScreen} onPedido={() => setScreen("pedido-info")} onLogin={() => setScreen("admin")} />
+         <Home 
+            NOME_APP={NOME_APP} 
+            cart={cart} 
+            clientUser={clientUser}
+            setScreen={setScreen} 
+            onLogout={() => setClientUser(null)}
+            onPedido={() => {
+                if (!clientUser) {
+                    alert("Por favor, faça login ou crie uma conta para pedir!");
+                    setScreen("client-login");
+                } else {
+                    setScreen("pedido-info");
+                }
+            }} 
+            onLogin={() => setScreen("client-login")} 
+         />
        )}
 
-       {/* Onde a mágica acontece chamando a tela certa! */}
        {screen === "client-register" && (
-         <ClientRegisterScreen setScreen={setScreen} />
+         <ClientRegisterScreen 
+            onSave={(c) => { setClients([...clients, c]); setClientUser(c); setScreen("home"); }}
+            onBack={() => setScreen("home")} 
+         />
        )}
 
-       {screen === "pedido-info" && (
-         <PedidoInfo pedInfo={pedInfo} setPedInfo={setPedInfo} onBack={() => setScreen("home")} onProximo={() => setScreen("pedido-cart")} />
+       {screen === "client-login" && (
+         <ClientLoginScreen 
+            clients={clients}
+            onLogin={(c) => { setClientUser(c); setScreen("home"); }}
+            onRegister={() => setScreen("client-register")}
+            onBack={() => setScreen("home")}
+         />
        )}
 
-       {screen === "pedido-cart" && (
-         <PedidoCart cart={cart} setCart={setCart} setScreen={setScreen} editIdx={editIdx} setEditIdx={setEditIdx} addingIt={addingIt} setAddingIt={setAddingIt} taxaReg={taxaReg} cartFinal={cartFinal} cartCaucao={cartCaucao} cartSaldo={cartSaldo} cfg={cfg} TIPOS={TIPOS_BASE} />
-       )}
-
-       {screen === "pedido-confirm" && (
-         <PedidoConfirm cart={cart} pedInfo={pedInfo} cfg={cfg} taxaReg={taxaReg} cartFinal={cartFinal} cartCaucao={cartCaucao} cartSaldo={cartSaldo} setScreen={setScreen} setUpsellOpen={setUpsellOpen} TIPOS={TIPOS_BASE} />
-       )}
-
-       {screen === "pedido-done" && (
-         <PedidoDoneScreen {...doneData} onHome={() => setScreen("home")} />
-       )}
-
-       {screen === "admin" && (
-         <AdminPanel orders={orders} setOrders={setOrders} cfg={cfg} onBack={() => setScreen("home")} />
-       )}
+       {screen === "pedido-info" && (<PedidoInfo pedInfo={pedInfo} setPedInfo={setPedInfo} onBack={() => setScreen("home")} onProximo={() => setScreen("pedido-cart")} />)}
+       {screen === "pedido-cart" && (<PedidoCart cart={cart} setCart={setCart} setScreen={setScreen} />)}
+       {screen === "pedido-done" && (<PedidoDoneScreen onHome={() => setScreen("home")} />)}
+       {screen === "admin" && (<AdminPanel orders={orders} setOrders={setOrders} onBack={() => setScreen("home")} />)}
     </div>
   );
 }
