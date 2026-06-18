@@ -1,26 +1,22 @@
 import React, { useState, useEffect } from "react";
-// Utils & Constants
 import { NOME_APP, CSS, DEFAULT_CFG, TIPOS_BASE } from "./utils/constants";
 import { LS, san, getPrecoItem, fmtR, fmtDt, gerarChecksumPedido } from "./utils/helpers";
 
-// Screens
 import { Home } from "./screens/Home";
 import { PedidoInfo } from "./screens/PedidoInfo";
 import { PedidoCart } from "./screens/PedidoCart";
 import { PedidoConfirm } from "./screens/PedidoConfirm";
 import { PedidoDoneScreen } from "./screens/PedidoDone";
 import { AdminPanel } from "./screens/AdminPanel";
-import { Registro } from "./screens/Registro"; // Importando a nova tela
+// Importando usando o arquivo exato que você tem:
+import { ClientRegisterScreen } from "./screens/ClientRegister";
 
-// Components
 import { UpsellModal } from "./components/UpsellModal";
 
 export default function App() {
   const [screen, setScreen] = useState("home");
   const [cart, setCart] = useState([]);
-  
   const [orders, setOrders] = useState(() => LS.get("fab_orders") ?? []);
-  
   const [pedInfo, setPedInfo] = useState({ entrega: "", hora: "", obs: "", regiao: null, enderecoEntrega: "" });
   const [cfg, setCfg] = useState(() => LS.get("fab_cfg") ?? san(DEFAULT_CFG));
   
@@ -29,9 +25,7 @@ export default function App() {
   const [upsellOpen, setUpsellOpen] = useState(false);
   const [doneData, setDoneData] = useState({ caucao: 0, wppUrl: "", total: null, saldo: null });
 
-  useEffect(() => {
-    LS.set("fab_orders", orders);
-  }, [orders]);
+  useEffect(() => { LS.set("fab_orders", orders); }, [orders]);
 
   const cartTotal = cart.reduce((s, it) => s + (getPrecoItem(it, cfg.adicionalGourmet) ?? 0), 0);
   const taxaReg = pedInfo.regiao?.isRetirada ? 0 : Number(pedInfo.regiao?.taxa || 0);
@@ -61,9 +55,7 @@ export default function App() {
     });
 
     setOrders(p => [...p, novoPedido]);
-    
     const wppTxt = encodeURIComponent(`Olá! Pedido 🎂\nData: ${fmtDt(pedInfo.entrega)}\nTotal: ${fmtR(totalFinal)}\nCaução: ${fmtR(caucaoFinal)}\nSALDO: ${fmtR(saldoFinal)}`);
-    
     setDoneData({ caucao: caucaoFinal, wppUrl: `https://wa.me/5531999154485?text=${wppTxt}`, total: totalFinal, saldo: saldoFinal });
     
     setCart([]);
@@ -83,18 +75,12 @@ export default function App() {
        )}
 
        {screen === "home" && (
-         <Home 
-            NOME_APP={NOME_APP} 
-            cart={cart} 
-            setScreen={setScreen} 
-            onPedido={() => setScreen("pedido-info")} 
-            onLogin={() => setScreen("admin")} 
-         />
+         <Home NOME_APP={NOME_APP} cart={cart} setScreen={setScreen} onPedido={() => setScreen("pedido-info")} onLogin={() => setScreen("admin")} />
        )}
 
-       {/* Renderiza a tela de Registro */}
-       {screen === "registro" && (
-         <Registro setScreen={setScreen} />
+       {/* Onde a mágica acontece chamando a tela certa! */}
+       {screen === "client-register" && (
+         <ClientRegisterScreen setScreen={setScreen} />
        )}
 
        {screen === "pedido-info" && (

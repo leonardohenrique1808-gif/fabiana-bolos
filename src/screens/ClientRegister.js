@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-export function Registro({ setScreen }) {
+export function ClientRegisterScreen({ setScreen }) {
   const [form, setForm] = useState({ nome: "", telefone: "", aniversario: "" });
 
   const handleRegister = (e) => {

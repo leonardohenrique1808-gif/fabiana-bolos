@@ -71,7 +71,7 @@ export function Home({ onLogin, onPedido, clientUser, cart, setScreen, NOME_APP 
             
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", width: "100%", maxWidth: "350px", marginTop: "-55px" }}>
                
-               <div onClick={() => setScreen("registro")} style={{ textAlign: "center", cursor: "pointer", background: "#E598A8", padding: "15px 5px", borderRadius: "30px 30px 10px 10px", width: "80px", boxShadow: "0 5px 15px rgba(0,0,0,0.2)" }}>
+               <div onClick={() => setScreen("client-register")} style={{ textAlign: "center", cursor: "pointer", background: "#E598A8", padding: "15px 5px", borderRadius: "30px 30px 10px 10px", width: "80px", boxShadow: "0 5px 15px rgba(0,0,0,0.2)" }}>
                   <div style={{ fontSize: "20px", marginBottom: "2px" }}>👤</div>
                   <p style={{ fontSize: "11px", color: "#4A2C2A", fontWeight: "800", margin: 0, lineHeight: "1.2" }}>Registrar<br/>Cliente</p>
                </div>
@@ -117,7 +117,7 @@ export function Home({ onLogin, onPedido, clientUser, cart, setScreen, NOME_APP 
       }}>
         <span style={{ cursor: "pointer", color: "#D89A9E" }}>🏠</span> 
         <span style={{ cursor: "pointer", color: "#4A2C2A" }}>☰</span> 
-        <span onClick={() => setScreen("registro")} style={{ cursor: "pointer", color: "#4A2C2A" }}>👤</span> 
+        <span onClick={() => setScreen("client-register")} style={{ cursor: "pointer", color: "#4A2C2A" }}>👤</span> 
         <span style={{ cursor: "pointer", color: "#4A2C2A" }}>🛒</span>
       </footer>
     </div>
