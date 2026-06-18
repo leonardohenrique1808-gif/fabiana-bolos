@@ -1,107 +1,135 @@
 import React from "react";
 
 export function Home({ onLogin, onPedido, clientUser, cart, setScreen, NOME_APP }) {
+  // Mantive os sabores reais que você produz
   const produtos = [
     { nome: "Red Velvet", preco: "5,50" },
-    { nome: "Chocolate", preco: "12,00" },
-    { nome: "Fruit Cake", preco: "8,00" }
+    { nome: "Brigadeiro", preco: "6,00" },
+    { nome: "Leite Ninho", preco: "6,00" }
   ];
 
   return (
     <div style={{ 
       fontFamily: "'Nunito', sans-serif", 
-      background: "#FFF8F6", // Tom de creme quente e acolhedor
+      background: "#FFF9F2", // 1. Fundo topo (Creme claro)
       minHeight: "100vh", 
-      paddingBottom: "120px",
       display: "flex",
-      flexDirection: "column"
+      flexDirection: "column",
+      position: "relative"
     }}>
       
       {/* Cabeçalho */}
       <header style={{ padding: "40px 20px 20px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-           <p style={{ margin: 0, fontSize: "12px", color: "#A1887F" }}>Bem-vindo(a)!</p>
-           <h1 style={{ fontSize: 24, fontWeight: 900, color: "#5D4037", margin: 0 }}>Fabiana Bolos</h1>
+           <p style={{ margin: 0, fontSize: "14px", color: "#D89A9E", fontWeight: "bold" }}>Bem-vindo(a)!</p>
+           <h1 style={{ fontSize: 26, fontWeight: 900, color: "#4A2C2A", margin: 0, fontFamily: "serif" }}>{NOME_APP}</h1>
         </div>
         <div onClick={() => cart.length > 0 ? setScreen("pedido-cart") : null} 
-             style={{ background: "#fff", padding: "10px", borderRadius: "50%", boxShadow: "0 4px 10px rgba(0,0,0,0.05)" }}>🛒</div>
+             style={{ background: "#fff", padding: "10px", borderRadius: "50%", boxShadow: "0 4px 10px rgba(0,0,0,0.05)", cursor: "pointer", fontSize: "20px" }}>
+          🛒
+        </div>
       </header>
 
       {/* Carrossel de Produtos */}
-      <div style={{ padding: "0 20px 30px 20px" }}>
-        <h3 style={{ color: "#5D4037", marginBottom: "15px", fontSize: "16px" }}>Bolos Mais Pedidos</h3>
+      <div style={{ padding: "0 20px 20px 20px", zIndex: 2 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+            <h3 style={{ color: "#4A2C2A", fontSize: "16px", margin: 0 }}>Bolos Mais Pedidos</h3>
+            <span style={{ fontSize: "12px", color: "#A1887F", fontWeight: "bold" }}>Delícias do Dia</span>
+        </div>
+        
         <div style={{ display: "flex", gap: "15px", overflowX: "auto", paddingBottom: "10px" }}>
           {produtos.map((p, i) => (
             <div key={i} style={{ 
-              minWidth: "140px", background: "#fff", padding: "15px", borderRadius: "20px", 
-              textAlign: "center", boxShadow: "0 5px 15px rgba(0,0,0,0.03)"
+              minWidth: "140px", background: "#fff", padding: "12px", borderRadius: "15px", 
+              textAlign: "center", boxShadow: "0 5px 15px rgba(0,0,0,0.05)"
             }}>
-              <div style={{ background: "#FDF0EF", height: "70px", borderRadius: "15px", marginBottom: "10px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px" }}>🍰</div>
-              <p style={{ fontSize: "12px", fontWeight: "700", margin: "5px 0", color: "#5D4037" }}>{p.nome}</p>
-              <span style={{ fontWeight: "800", color: "#D81B60", fontSize: "13px" }}>R$ {p.preco}</span>
+              <div style={{ background: "#FDF0EF", height: "80px", borderRadius: "10px", marginBottom: "10px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "30px" }}>🍰</div>
+              <p style={{ fontSize: "12px", fontWeight: "700", margin: "5px 0", color: "#4A2C2A" }}>{p.nome}</p>
+              <span style={{ fontWeight: "800", color: "#4A2C2A", fontSize: "13px" }}>R$ {p.preco}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Cluster de Ações - O Design da Imagem */}
+      {/* 2. Camada Meio (Curva Rosa) */}
       <div style={{ 
-        flex: 1,
-        background: "white", 
-        padding: "40px 20px 20px 20px", 
-        borderRadius: "40px 40px 0 0", 
-        boxShadow: "0 -10px 30px rgba(0,0,0,0.03)",
-        display: "flex", flexDirection: "column", alignItems: "center"
+        background: "#FFC2D1", 
+        borderTopLeftRadius: "50px", 
+        borderTopRightRadius: "50px", 
+        flex: 1, 
+        display: "flex", 
+        flexDirection: "column",
+        marginTop: "10px"
       }}>
         
-        {/* Linha de botões */}
-        <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center", width: "100%", maxWidth: "400px" }}>
-             
-             {/* Registrar */}
-             <div onClick={() => setScreen("registro")} style={{ textAlign: "center", cursor: "pointer" }}>
-                <div style={{ background: "#FDF0EF", width: "60px", height: "60px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "8px" }}>👤</div>
-                <p style={{ fontSize: "11px", color: "#5D4037", fontWeight: "600" }}>Registrar</p>
-             </div>
+        {/* 3. Camada Base (Fundo Marrom Escuro) */}
+        <div style={{
+           background: "#4A2C2A", // Marrom escuro da imagem
+           borderTopLeftRadius: "50px",
+           borderTopRightRadius: "50px",
+           flex: 1,
+           marginTop: "60px", // Isso deixa a faixa rosa aparecendo em cima
+           padding: "0 20px 80px 20px", // padding bottom extra pro footer
+           display: "flex", flexDirection: "column", alignItems: "center",
+           position: "relative"
+        }}>
+            
+            {/* Cluster de Ações (Ficam na divisa entre o rosa e o marrom) */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", width: "100%", maxWidth: "350px", marginTop: "-55px" }}>
+               
+               {/* Botão Registrar (Fundo blob rosa escuro) */}
+               <div onClick={() => alert("Cadastro")} style={{ textAlign: "center", cursor: "pointer", background: "#E598A8", padding: "15px 5px", borderRadius: "30px 30px 10px 10px", width: "80px", boxShadow: "0 5px 15px rgba(0,0,0,0.2)" }}>
+                  <div style={{ fontSize: "20px", marginBottom: "2px" }}>👤</div>
+                  <p style={{ fontSize: "11px", color: "#4A2C2A", fontWeight: "800", margin: 0, lineHeight: "1.2" }}>Registrar<br/>Cliente</p>
+               </div>
 
-             {/* Fazer Pedido (Botão Flutuante) */}
-             <button onClick={onPedido} style={{ 
-               width: "120px", height: "120px", borderRadius: "50%", 
-               background: "linear-gradient(135deg, #FFB7C5, #E91E63)", 
-               color: "#fff", border: "none", fontSize: "14px", fontWeight: "bold", 
-               cursor: "pointer", boxShadow: "0 10px 20px rgba(233, 30, 99, 0.3)",
-               marginTop: "-80px", // Efeito de sobreposição
-               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center"
-             }}>
-               <span>🎂</span> Pedir
-             </button>
+               {/* Botão Central Fazer Pedido (Com anel dourado) */}
+               <button onClick={onPedido} style={{ 
+                 width: "125px", height: "125px", borderRadius: "50%", 
+                 background: "linear-gradient(135deg, #E598A8, #C25975)", // Rosa metálico
+                 color: "#fff", 
+                 border: "6px solid #E6C280", // Anel Dourado
+                 fontSize: "14px", fontWeight: "bold", 
+                 cursor: "pointer", boxShadow: "0 10px 25px rgba(0, 0, 0, 0.4)",
+                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                 transform: "translateY(-15px)" // Sobe ele um pouquinho mais
+               }}>
+                 <span style={{ fontSize: "26px", marginBottom: "2px" }}>🎂</span>
+                 <span style={{ lineHeight: "1.2" }}>Fazer<br/>Pedido</span>
+               </button>
 
-             {/* Login */}
-             <div onClick={onLogin} style={{ textAlign: "center", cursor: "pointer" }}>
-                <div style={{ background: "#FDF0EF", width: "60px", height: "60px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "8px" }}>🔐</div>
-                <p style={{ fontSize: "11px", color: "#5D4037", fontWeight: "600" }}>Login</p>
-             </div>
-        </div>
+               {/* Botão Login (Fundo blob bege) */}
+               <div onClick={onLogin} style={{ textAlign: "center", cursor: "pointer", background: "#E6C280", padding: "15px 5px", borderRadius: "30px 30px 10px 10px", width: "80px", boxShadow: "0 5px 15px rgba(0,0,0,0.2)" }}>
+                  <div style={{ fontSize: "20px", marginBottom: "2px" }}>🔐</div>
+                  <p style={{ fontSize: "11px", color: "#4A2C2A", fontWeight: "800", margin: 0, lineHeight: "1.2" }}>Login<br/>Cliente</p>
+               </div>
+            </div>
 
-        {/* Acesso Administrativo (Bem abaixo, separado) */}
-        <div style={{ marginTop: "60px", textAlign: "center" }}>
-          <button onClick={() => setScreen("admin")} style={{ 
-            background: "transparent", border: "1px solid #D4A5A5", 
-            borderRadius: "15px", padding: "8px 20px", color: "#D4A5A5", cursor: "pointer", fontSize: "12px",
-            fontWeight: "500"
-          }}>
-            ⚙️ Painel Administrativo
-          </button>
+            {/* Acesso Administrativo (Dourado sobre marrom) */}
+            <div style={{ marginTop: "40px", width: "100%", display: "flex", justifyContent: "center" }}>
+              <button onClick={() => setScreen("admin")} style={{ 
+                background: "transparent", border: "1px solid #E6C280", 
+                borderRadius: "25px", padding: "12px 30px", color: "#E6C280", cursor: "pointer", fontSize: "12px",
+                fontWeight: "700", display: "flex", alignItems: "center", gap: "8px"
+              }}>
+                <span style={{ fontSize: "16px" }}>⚙️</span> Acesso Administrativo
+              </button>
+            </div>
+
         </div>
       </div>
 
       {/* Nav Inferior */}
       <footer style={{ 
         position: "fixed", bottom: 0, width: "100%", 
-        background: "#fff", display: "flex", justifyContent: "space-around", 
-        padding: "15px 0", borderTop: "1px solid #eee",
-        fontSize: "24px"
+        background: "#FFF9F2", display: "flex", justifyContent: "space-around", 
+        padding: "15px 0", borderTop: "1px solid #E6C280",
+        fontSize: "22px", borderRadius: "20px 20px 0 0", zIndex: 10
       }}>
-        <span>🏠</span> <span>☰</span> <span>👤</span> <span>🛒</span>
+        <span style={{ cursor: "pointer", color: "#D89A9E" }}>🏠</span> 
+        <span style={{ cursor: "pointer", color: "#4A2C2A" }}>☰</span> 
+        <span style={{ cursor: "pointer", color: "#4A2C2A" }}>👤</span> 
+        <span style={{ cursor: "pointer", color: "#4A2C2A" }}>🛒</span>
       </footer>
     </div>
   );
