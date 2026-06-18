@@ -9,7 +9,8 @@ import { PedidoInfo } from "./screens/PedidoInfo";
 import { PedidoCart } from "./screens/PedidoCart";
 import { PedidoConfirm } from "./screens/PedidoConfirm";
 import { PedidoDoneScreen } from "./screens/PedidoDone";
-import { AdminPanel } from "./screens/AdminPanel"; // Novo: Painel Admin
+import { AdminPanel } from "./screens/AdminPanel";
+import { Registro } from "./screens/Registro"; // Importando a nova tela
 
 // Components
 import { UpsellModal } from "./components/UpsellModal";
@@ -18,31 +19,26 @@ export default function App() {
   const [screen, setScreen] = useState("home");
   const [cart, setCart] = useState([]);
   
-  // Persistência: Pedidos são carregados do localStorage ao iniciar
   const [orders, setOrders] = useState(() => LS.get("fab_orders") ?? []);
   
   const [pedInfo, setPedInfo] = useState({ entrega: "", hora: "", obs: "", regiao: null, enderecoEntrega: "" });
   const [cfg, setCfg] = useState(() => LS.get("fab_cfg") ?? san(DEFAULT_CFG));
   
-  // Estados Extras para fluxo completo
   const [editIdx, setEditIdx] = useState(null);
   const [addingIt, setAddingIt] = useState(false);
   const [upsellOpen, setUpsellOpen] = useState(false);
   const [doneData, setDoneData] = useState({ caucao: 0, wppUrl: "", total: null, saldo: null });
 
-  // Salva pedidos automaticamente sempre que a lista mudar
   useEffect(() => {
     LS.set("fab_orders", orders);
   }, [orders]);
 
-  // Cálculos do Carrinho
   const cartTotal = cart.reduce((s, it) => s + (getPrecoItem(it, cfg.adicionalGourmet) ?? 0), 0);
   const taxaReg = pedInfo.regiao?.isRetirada ? 0 : Number(pedInfo.regiao?.taxa || 0);
   const cartFinal = cartTotal + taxaReg;
   const cartCaucao = Math.ceil(cartFinal * 0.5);
   const cartSaldo = cartFinal - cartCaucao;
 
-  // Lógica de finalização de pedido
   const confirmarPedidoFinal = (extraItems = []) => {
     const upsellItems = extraItems.map(u => ({ tipo: "upsell", upsellId: u.id, nome: u.nome, desc: u.desc }));
     const allCart = [...cart, ...upsellItems];
@@ -76,7 +72,7 @@ export default function App() {
   };
 
   return (
- <div className="App">
+    <div className="App">
        <style>{CSS}</style>
        
        {upsellOpen && (
@@ -94,6 +90,11 @@ export default function App() {
             onPedido={() => setScreen("pedido-info")} 
             onLogin={() => setScreen("admin")} 
          />
+       )}
+
+       {/* Renderiza a tela de Registro */}
+       {screen === "registro" && (
+         <Registro setScreen={setScreen} />
        )}
 
        {screen === "pedido-info" && (
@@ -115,6 +116,6 @@ export default function App() {
        {screen === "admin" && (
          <AdminPanel orders={orders} setOrders={setOrders} cfg={cfg} onBack={() => setScreen("home")} />
        )}
-  </div>
+    </div>
   );
 }
