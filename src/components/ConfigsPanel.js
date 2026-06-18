@@ -3,8 +3,8 @@ import { Card } from "./Card";
 import { Btn }  from "./Btn";
 import { Slct } from "./Slct";
 import { Fld }  from "./Fld";
-import { san }  from "../utils/helpers";
-import { LS, TIPOS_BASE } from "../utils/constants";
+import { san, LS } from "../utils/helpers";   // ← LS vem de helpers, não de constants
+import { TIPOS_BASE } from "../utils/constants";
 
 const fs = { width:"100%",border:"1px solid #E5D0EE",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",background:"#fff",fontFamily:"'Nunito',sans-serif",boxSizing:"border-box" };
 
