@@ -1,107 +1,366 @@
-import React, { useState, useEffect } from "react";
-import { NOME_APP, CSS, DEFAULT_CFG, TIPOS_BASE } from "./utils/constants";
-import { LS, san, getPrecoItem, fmtR, fmtDt, gerarChecksumPedido } from "./utils/helpers";
+import React, { useState, useEffect, useRef } from "react";
+import { CSS, NOME_APP, DEFAULT_CFG, TIPOS_BASE, STATUS_UNICO, STATUS_LEGACY_MAP, WHATSAPP, PIX_KEY } from "./utils/constants";
+import { LS, san, getPrecoItem, fmtR, fmtDt, today, minDt, validateDate, gerarChecksumPedido, sanitizeInput, obfClt, deobfClt, maskPh } from "./utils/helpers";
 
-import { Home } from "./screens/Home";
-import { PedidoInfo } from "./screens/PedidoInfo";
-import { PedidoCart } from "./screens/PedidoCart";
-import { PedidoConfirm } from "./screens/PedidoConfirm";
-import { PedidoDoneScreen } from "./screens/PedidoDone";
-import { AdminPanel } from "./screens/AdminPanel";
+import { Home }                 from "./screens/Home";
+import { PedidoInfo }           from "./screens/PedidoInfo";
+import { PedidoCart }           from "./screens/PedidoCart";
+import { PedidoConfirm }        from "./screens/PedidoConfirm";
+import { PedidoDoneScreen }     from "./screens/PedidoDone";
+import { AdminPanel }           from "./screens/AdminPanel";
+import { AdminLoginScreen }     from "./screens/AdminLogin";
+import { ClientArea }           from "./screens/ClientArea";
+import { ClientLoginScreen }    from "./screens/ClientLogin";
 import { ClientRegisterScreen } from "./screens/ClientRegister";
-import { ClientLoginScreen } from "./screens/ClientLogin";
-import { UpsellModal } from "./components/UpsellModal";
+import { KernelLoginScreen }    from "./screens/KernelLogin";
+import { KernelPanel }          from "./screens/KernelPanel";
+import { UpsellModal }          from "./components/UpsellModal";
+import { LabelModal }           from "./components/LabelModal";
+import { PinDlg }               from "./components/PinDlg";
 
 export default function App() {
+  // ── Dados persistidos ─────────────────────────────────────────
+  const [cfg,             setCfg]            = useState(() => LS.get("fab_cfg") ?? san(DEFAULT_CFG));
+  const [orders,          setOrders]         = useState(() =>
+    (LS.get("fab_orders") ?? []).map(o => {
+      if (!STATUS_UNICO.includes(o.status))
+        o.status = STATUS_LEGACY_MAP[o.status?.toLowerCase()] || "Aguardando Caução";
+      if (!o.checksum) o.checksum = gerarChecksumPedido(o);
+      return o;
+    })
+  );
+  const [clients,         setClients]        = useState(() => (LS.get("fab_clients") ?? []).map(deobfClt));
+  const [clientUser,      setClientUser]     = useState(() => { const s = LS.get("fab_session"); return s ? deobfClt(s) : null; });
+  const [maintenanceMode, setMaintenanceMode]= useState(() => LS.get("fab_maintenance") ?? false);
+  const [tipos,           setTipos]          = useState(() => LS.get("fab_tipos") ?? san(TIPOS_BASE));
+  const TIPOS = tipos?.length ? tipos : TIPOS_BASE;
+
+  // ── Navegação ─────────────────────────────────────────────────
   const [screen, setScreen] = useState("home");
-  const [cart, setCart] = useState([]);
-  
-  // Estados para Usuários e Login
-  const [orders, setOrders] = useState(() => LS.get("fab_orders") ?? []);
-  const [clients, setClients] = useState(() => LS.get("fab_clients") ?? []);
-  const [clientUser, setClientUser] = useState(() => LS.get("fab_active_user") ?? null);
-  
+
+  // ── Pedido em construção ──────────────────────────────────────
+  const [cart,    setCart]    = useState([]);
   const [pedInfo, setPedInfo] = useState({ entrega: "", hora: "", obs: "", regiao: null, enderecoEntrega: "" });
-  const [cfg, setCfg] = useState(() => LS.get("fab_cfg") ?? san(DEFAULT_CFG));
-  
   const [editIdx, setEditIdx] = useState(null);
-  const [addingIt, setAddingIt] = useState(false);
+  const [addingIt,setAddingIt]= useState(false);
+  const [dateErr, setDateErr] = useState("");
+
+  // ── Modais ────────────────────────────────────────────────────
   const [upsellOpen, setUpsellOpen] = useState(false);
-  const [doneData, setDoneData] = useState({ caucao: 0, wppUrl: "", total: null, saldo: null });
+  const [labelOrd,   setLabelOrd]   = useState(null);
+  const [pinDlg,     setPinDlg]     = useState(null);
+  const [doneData,   setDoneData]   = useState({ caucao: 0, wppUrl: "", total: null, saldo: null });
 
-  useEffect(() => { LS.set("fab_orders", orders); }, [orders]);
-  useEffect(() => { LS.set("fab_clients", clients); }, [clients]);
-  useEffect(() => { LS.set("fab_active_user", clientUser); }, [clientUser]);
+  // ── Segurança: lock admin ─────────────────────────────────────
+  const [lockedUntil, setLockedUntil] = useState(() => LS.get("fab_lockuntil") ?? 0);
+  const [lockLeft,    setLockLeft]    = useState(0);
+  const loginAttempts = useRef(0);
+  const lastActivity  = useRef(Date.now());
+  const autoLogoutRef = useRef(null);
 
-  const cartTotal = cart.reduce((s, it) => s + (getPrecoItem(it, cfg.adicionalGourmet) ?? 0), 0);
-  const taxaReg = pedInfo.regiao?.isRetirada ? 0 : Number(pedInfo.regiao?.taxa || 0);
-  const cartFinal = cartTotal + taxaReg;
-
-  const confirmarPedidoFinal = (extraItems = []) => {
-    const allCart = [...cart, ...extraItems.map(u => ({ tipo: "upsell", upsellId: u.id, nome: u.nome, desc: u.desc }))];
-    const totalFinal = allCart.reduce((s, it) => s + (getPrecoItem(it, cfg.adicionalGourmet) ?? 0), 0) + taxaReg;
-    
-    const novoPedido = san({
-      id: Date.now(),
-      nome: clientUser?.nome || "Cliente",
-      itens: allCart,
-      valor: totalFinal,
-      status: "Aguardando Caução",
-      criadoEm: new Date().toISOString()
+  // ── Logo click (5→admin, 7→kernel) ───────────────────────────
+  const [clickCt,   setClickCt]   = useState(0);
+  const clickTimer              = useRef(null);
+  const handleLogoClick = () => {
+    setClickCt(p => {
+      const n = p + 1;
+      if (n >= 7) { setScreen("kernel-login"); clearTimeout(clickTimer.current); return 0; }
+      if (n === 5) setScreen("admin-login");
+      return n;
     });
+    clearTimeout(clickTimer.current);
+    clickTimer.current = setTimeout(() => setClickCt(0), 3000);
+  };
 
-    setOrders(p => [...p, novoPedido]);
+  // ── Totais do carrinho ────────────────────────────────────────
+  const cartTotal        = cart.reduce((s, it) => s + (getPrecoItem(it, cfg.adicionalGourmet) ?? 0), 0);
+  const isRegiaoRetirada = pedInfo.regiao?.isRetirada ?? false;
+  const taxaReg          = isRegiaoRetirada ? 0 : Number(pedInfo.regiao?.taxa || 0);
+  const cartFinal        = cartTotal + taxaReg;
+  const cartCaucao       = Math.ceil(cartFinal * 0.5);
+  const cartSaldo        = cartFinal - cartCaucao;
+
+  // ── Persistência ─────────────────────────────────────────────
+  useEffect(() => { LS.set("fab_cfg",        cfg); },                   [cfg]);
+  useEffect(() => { LS.set("fab_orders",     orders); },                [orders]);
+  useEffect(() => { LS.set("fab_clients",    clients.map(obfClt)); },   [clients]);
+  useEffect(() => { LS.set("fab_maintenance",maintenanceMode); },       [maintenanceMode]);
+  useEffect(() => { LS.set("fab_tipos",      tipos); },                 [tipos]);
+  useEffect(() => { LS.set("fab_session",    clientUser ? obfClt(clientUser) : null); }, [clientUser]);
+
+  // ── Lock timer ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!lockedUntil || Date.now() >= lockedUntil) return;
+    const iv = setInterval(() => {
+      const left = Math.ceil((lockedUntil - Date.now()) / 1000);
+      setLockLeft(Math.max(0, left));
+      if (left <= 0) { setLockedUntil(0); LS.set("fab_lockuntil", 0); loginAttempts.current = 0; clearInterval(iv); }
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [lockedUntil]);
+
+  // ── Auto-logout admin ─────────────────────────────────────────
+  useEffect(() => {
+    if (screen !== "admin") return;
+    const track = () => { lastActivity.current = Date.now(); };
+    window.addEventListener("click",      track);
+    window.addEventListener("touchstart", track);
+    autoLogoutRef.current = setInterval(() => {
+      if (Date.now() - lastActivity.current > (15 * 60 * 1000)) setScreen("home");
+    }, 30000);
+    return () => {
+      clearInterval(autoLogoutRef.current);
+      window.removeEventListener("click",      track);
+      window.removeEventListener("touchstart", track);
+    };
+  }, [screen]);
+
+  // ── Helpers de pedido ─────────────────────────────────────────
+  const resetPed = () => {
     setCart([]);
+    setPedInfo({ entrega: "", hora: "", obs: "", regiao: null, enderecoEntrega: "" });
+    setEditIdx(null);
+    setAddingIt(false);
+    setDateErr("");
+  };
+
+  const updateOrd = (id, patch) =>
+    setOrders(p => san(p.map(o => {
+      if (o.id !== id) return o;
+      const upd = { ...o, ...patch };
+      upd.freteManual = Number(upd.freteManual || 0);
+      const totalItens = (upd.itens ?? []).reduce((s, it) => s + (getPrecoItem(it, cfg.adicionalGourmet) ?? 0), 0);
+      const totalFinal = totalItens + Number(upd.regiao?.taxa || 0) + upd.freteManual;
+      upd.valor  = totalFinal || null;
+      upd.caucao = totalFinal ? Math.ceil(totalFinal * 0.5) : null;
+      upd.checksum = gerarChecksumPedido(upd);
+      return upd;
+    })));
+
+  const removeOrd = (id) => setOrders(p => p.filter(o => o.id !== id));
+
+  // ── Confirmar pedido ──────────────────────────────────────────
+  const confirmarPedidoFinal = (extraItems = []) => {
+    if (!LS.check()) return;
+    const upsellItems = extraItems.map(u => ({ tipo: "upsell", upsellId: u.id, nome: u.nome, desc: u.desc }));
+    const allCart     = [...cart, ...upsellItems];
+    const totalItens  = allCart.reduce((s, it) => s + (getPrecoItem(it, cfg.adicionalGourmet) ?? 0), 0);
+    const totalFinal  = totalItens + taxaReg;
+    const caucaoFinal = totalFinal ? Math.ceil(totalFinal * 0.5) : 0;
+    const saldoFinal  = totalFinal - caucaoFinal;
+
+    const nomeSan     = sanitizeInput(clientUser?.nome || "");
+    const obsSan      = sanitizeInput(pedInfo.obs);
+    const enderecoSan = sanitizeInput(pedInfo.enderecoEntrega || "");
+    const novoId      = Date.now() + Math.floor(Math.random() * 1000);
+
+    const novo = san({
+      id:          novoId,
+      clienteId:   clientUser?.id ?? null,
+      nome:        nomeSan,
+      telefone:    clientUser?.telefone ?? "",
+      endereco:    enderecoSan,
+      entrega:     pedInfo.entrega,
+      hora:        pedInfo.hora || "",
+      regiao:      pedInfo.regiao ?? null,
+      obs:         obsSan,
+      itens:       allCart,
+      valor:       totalFinal || null,
+      caucao:      caucaoFinal || null,
+      freteManual: 0,
+      status:      "Aguardando Caução",
+      criadoEm:    new Date().toISOString(),
+    });
+    novo.checksum = gerarChecksumPedido(novo);
+
+    setOrders(p => san([...p, novo]));
+
+    if (clientUser)
+      setClients(p => san(p.map(c =>
+        c.id === clientUser.id ? { ...c, historico: [...(c.historico ?? []), novo.id] } : c
+      )));
+
+    if (cfg.webhookUrl)
+      try { fetch(cfg.webhookUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(san(novo)) }); } catch {}
+
+    const wppTxt = encodeURIComponent(
+      `Olá! Pedido 🎂\n👤 ${nomeSan}\n📅 ${fmtDt(pedInfo.entrega)}\n💰 Total: ${totalFinal ? fmtR(totalFinal) : "?"}\n💳 Caução: ${fmtR(caucaoFinal)}\n📌 SALDO: ${fmtR(saldoFinal)}`
+    );
+
+    setDoneData({ caucao: caucaoFinal, wppUrl: `https://wa.me/${WHATSAPP}?text=${wppTxt}`, total: totalFinal, saldo: saldoFinal });
+    resetPed();
     setScreen("pedido-done");
   };
 
-  return (
-    <div className="App">
-       <style>{CSS}</style>
-       
-       {upsellOpen && (
-         <UpsellModal onAdd={(ex) => { setUpsellOpen(false); confirmarPedidoFinal(ex); }} onSkip={() => { setUpsellOpen(false); confirmarPedidoFinal([]); }} />
-       )}
+  // ── Modais globais ────────────────────────────────────────────
+  const GlobalModais = () => (<>
+    {pinDlg    && <PinDlg   msg={pinDlg.msg} onOk={() => { pinDlg.onOk(); setPinDlg(null); }} onCancel={() => setPinDlg(null)} />}
+    {labelOrd  && <LabelModal order={labelOrd} cfg={cfg} tipos={TIPOS} onClose={() => setLabelOrd(null)} />}
+    {upsellOpen && <UpsellModal onAdd={ex => { setUpsellOpen(false); confirmarPedidoFinal(ex); }} onSkip={() => { setUpsellOpen(false); confirmarPedidoFinal([]); }} />}
+  </>);
 
-       {screen === "home" && (
-         <Home 
-            NOME_APP={NOME_APP} 
-            cart={cart} 
-            clientUser={clientUser}
-            setScreen={setScreen} 
-            onLogout={() => setClientUser(null)}
-            onPedido={() => {
-                if (!clientUser) {
-                    alert("Por favor, faça login ou crie uma conta para pedir!");
-                    setScreen("client-login");
-                } else {
-                    setScreen("pedido-info");
-                }
-            }} 
-            onLogin={() => setScreen("client-login")} 
-         />
-       )}
+  // ── Roteamento ────────────────────────────────────────────────
+  if (screen === "admin-login")
+    return <AdminLoginScreen
+      onLogin={() => { loginAttempts.current = 0; lastActivity.current = Date.now(); setScreen("admin"); }}
+      onBack={() => setScreen("home")}
+      lockedUntil={lockedUntil}
+      lockLeft={lockLeft}
+    />;
 
-       {screen === "client-register" && (
-         <ClientRegisterScreen 
-            onSave={(c) => { setClients([...clients, c]); setClientUser(c); setScreen("home"); }}
-            onBack={() => setScreen("home")} 
-         />
-       )}
+  if (screen === "kernel-login")
+    return <KernelLoginScreen
+      onLogin={() => setScreen("kernel")}
+      onBack={() => setScreen("home")}
+      lockedUntil={lockedUntil}
+      lockLeft={lockLeft}
+    />;
 
-       {screen === "client-login" && (
-         <ClientLoginScreen 
-            clients={clients}
-            onLogin={(c) => { setClientUser(c); setScreen("home"); }}
-            onRegister={() => setScreen("client-register")}
-            onBack={() => setScreen("home")}
-         />
-       )}
+  if (screen === "kernel")
+    return <KernelPanel
+      orders={orders}
+      clients={clients}
+      cfg={cfg}
+      maintenanceMode={maintenanceMode}
+      onSetMaintenance={setMaintenanceMode}
+      onSetLicense={d => setCfg(c => san({ ...c, licenseExpiry: d }))}
+      onSetOrders={v => setOrders(san(v))}
+      onSetClients={v => setClients(san(v))}
+      onSetCfg={v => setCfg(san(v))}
+      onBack={() => setScreen("home")}
+    />;
 
-       {screen === "pedido-info" && (<PedidoInfo pedInfo={pedInfo} setPedInfo={setPedInfo} onBack={() => setScreen("home")} onProximo={() => setScreen("pedido-cart")} />)}
-       {screen === "pedido-cart" && (<PedidoCart cart={cart} setCart={setCart} setScreen={setScreen} />)}
-       {screen === "pedido-done" && (<PedidoDoneScreen onHome={() => setScreen("home")} />)}
-       {screen === "admin" && (<AdminPanel orders={orders} setOrders={setOrders} onBack={() => setScreen("home")} />)}
-    </div>
-  );
+  if (screen === "client-login")
+    return <ClientLoginScreen
+      clients={clients}
+      onLogin={c => { setClientUser(san(c)); setScreen("client-area"); }}
+      onRegister={() => setScreen("client-register")}
+      onBack={() => setScreen("home")}
+    />;
+
+  if (screen === "client-register")
+    return <ClientRegisterScreen
+      onSave={f => {
+        const c = san({ id: Date.now(), ...f, historico: [], endereco: "" });
+        setClients(p => san([...p, c]));
+        setClientUser(c);
+        setScreen("client-area");
+      }}
+      onBack={() => setScreen("client-login")}
+    />;
+
+  if (screen === "client-area" && clientUser)
+    return <ClientArea
+      clientUser={clientUser}
+      orders={orders}
+      tipos={TIPOS}
+      cfg={cfg}
+      maintenanceMode={maintenanceMode}
+      onNovoPedido={() => setScreen("pedido-info")}
+      onLogout={() => { setClientUser(null); setScreen("home"); }}
+      onBack={() => setScreen("home")}
+    />;
+
+  if (screen === "pedido-done")
+    return <PedidoDoneScreen
+      caucao={doneData.caucao}
+      wppUrl={doneData.wppUrl}
+      total={doneData.total}
+      saldo={doneData.saldo}
+      hasClient={!!clientUser}
+      onClientArea={() => setScreen("client-area")}
+      onHome={() => setScreen("home")}
+    />;
+
+  if (screen === "pedido-info")
+    return <PedidoInfo
+      pedInfo={pedInfo}
+      setPedInfo={setPedInfo}
+      cfg={cfg}
+      dateErr={dateErr}
+      setDateErr={setDateErr}
+      onBack={() => setScreen(clientUser ? "client-area" : "home")}
+      onProximo={() => setScreen("pedido-cart")}
+    />;
+
+  if (screen === "pedido-cart")
+    return <>
+      <GlobalModais />
+      <PedidoCart
+        cart={cart}
+        setCart={setCart}
+        setScreen={setScreen}
+        editIdx={editIdx}
+        setEditIdx={setEditIdx}
+        addingIt={addingIt}
+        setAddingIt={setAddingIt}
+        taxaReg={taxaReg}
+        cartFinal={cartFinal}
+        cartCaucao={cartCaucao}
+        cartSaldo={cartSaldo}
+        cfg={cfg}
+        TIPOS={TIPOS}
+      />
+    </>;
+
+  if (screen === "pedido-confirm")
+    return <>
+      <GlobalModais />
+      <PedidoConfirm
+        cart={cart}
+        pedInfo={pedInfo}
+        clientUser={clientUser}
+        cfg={cfg}
+        taxaReg={taxaReg}
+        cartFinal={cartFinal}
+        cartCaucao={cartCaucao}
+        cartSaldo={cartSaldo}
+        setScreen={setScreen}
+        setUpsellOpen={setUpsellOpen}
+        TIPOS={TIPOS}
+      />
+    </>;
+
+  if (screen === "admin")
+    return <>
+      <GlobalModais />
+      <AdminPanel
+        orders={orders}
+        setOrders={setOrders}
+        updateOrd={updateOrd}
+        removeOrd={removeOrd}
+        cfg={cfg}
+        setCfg={setCfg}
+        tipos={tipos}
+        setTipos={setTipos}
+        TIPOS={TIPOS}
+        clients={clients}
+        maintenanceMode={maintenanceMode}
+        setMaintenanceMode={setMaintenanceMode}
+        setPinDlg={setPinDlg}
+        setLabelOrd={setLabelOrd}
+        onBack={() => setScreen("home")}
+      />
+    </>;
+
+  // HOME (default)
+  return <>
+    <style>{CSS}</style>
+    <GlobalModais />
+    <Home
+      NOME_APP={NOME_APP}
+      cart={cart}
+      clientUser={clientUser}
+      maintenanceMode={maintenanceMode}
+      setScreen={setScreen}
+      onLogoClick={handleLogoClick}
+      onPedido={() => {
+        if (!clientUser) { setScreen("client-login"); return; }
+        if (maintenanceMode) return;
+        setScreen("pedido-info");
+      }}
+      onLogin={() => setScreen("client-login")}
+      onAccount={() => clientUser ? setScreen("client-area") : setScreen("client-login")}
+    />
+  </>;
 }

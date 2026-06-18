@@ -1,0 +1,1287 @@
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\Badge.js ---
+
+import React from "react";
+import { STATUS_META } from "../utils/constants";
+
+export function Badge({ s }) {
+  const m = STATUS_META[s] ?? STATUS_META["Aguardando Caução"];
+  return (
+    <span style={{ 
+      background: m.bg, 
+      color: m.text, 
+      border: `1px solid ${m.brd}`, 
+      borderRadius: 20, 
+      padding: "2px 10px", 
+      fontSize: 11, 
+      fontWeight: 700, 
+      whiteSpace: "nowrap" 
+    }}>
+      {m.em} {s}
+    </span>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\Btn.js ---
+
+import React from "react";
+
+export function Btn({ ch, st, ...p }) {
+  return <button style={{ width:"100%",padding:"13px 18px",background:"#E91E8C",color:"#fff",border:"none",borderRadius:14,fontSize:15,fontWeight:800,fontFamily:"'Nunito',sans-serif", ...st }} {...p}>{ch}</button>;
+}
+
+export function BtnS({ ch, st, ...p }) {
+  return <button style={{ width:"100%",padding:"12px 16px",background:"#FFF0F8",color:"#E91E8C",border:"none",borderRadius:14,fontSize:14,fontWeight:700,fontFamily:"'Nunito',sans-serif", ...st }} {...p}>{ch}</button>;
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\BtnO.js ---
+
+import React from "react";
+
+export function BtnO({ active, ch, st, ...p }) {
+  return (
+    <button 
+      style={{ 
+        background: active ? "#E91E8C" : "#fff",
+        color: active ? "#fff" : "#E91E8C",
+        border: `1.5px solid ${active ? "#E91E8C" : "#E5D0EE"}`,
+        borderRadius: 10,
+        padding: "9px 14px",
+        fontSize: 13,
+        fontWeight: 700,
+        fontFamily: "'Nunito',sans-serif", 
+        ...st 
+      }} 
+      {...p}
+    >
+      {ch}
+    </button>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\Card.js ---
+
+import React from "react";
+
+export function Card({ ch, style }) {
+  return (
+    <div style={{ background:"#fff",border:"1px solid #FFF0F8",borderRadius:16,padding:16,marginBottom:12, ...style }}>
+      {ch}
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\Fld.js ---
+
+import React from "react";
+
+export function Fld({ label, children }) {
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <label style={{ fontSize: 13, fontWeight: 700, display: "block", marginBottom: 4, color: "#333" }}>
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\Hdr.js ---
+
+import React from "react";
+
+export function Hdr({ title, onBack }) {
+  return (
+    <div style={{ padding: "12px 16px", display: "flex", alignItems: "center", borderBottom: "1px solid #E5D0EE", background: "#fff" }}>
+      <button 
+        onClick={onBack} 
+        style={{ border: "none", background: "none", fontSize: 24, cursor: "pointer", color: "#E91E8C" }}
+      >
+        ←
+      </button>
+      <span style={{ fontWeight: 900, marginLeft: 10, fontSize: 18, color: "#333" }}>
+        {title}
+      </span>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\ItemBuilder.js ---
+
+import React, { useState } from "react";
+import { Fld } from "./Fld";
+import { Slct } from "./Slct";
+import { Btn, BtnS } from "./Btn";
+import { BtnO } from "./BtnO";
+import { Card } from "./Card";
+import { san, fmtR, calcItem } from "../utils/helpers";
+import { TIPOS_BASE, PRECOS, MASSAS, R_TRAD, R_GOUR, R_BENTO_T, R_BENTO_G, S_DOC_T, S_DOC_G } from "../utils/constants";
+
+const EMPTY_IT = { tipo:"",formato:"redondo",fatias:"",subtipo:"tradicional",quantidade:"50",massa:"Baunilha",recheio1:"",recheio2:"",bentoTipo:"tradicional",obs:"" };
+
+export function ItemBuilder({ init, onSave, onCancel, isEdit, gAdic = 0, tipos }) {
+  const pk = "#E91E8C";
+  const pkL = "#FFF0F8";
+  const T = (tipos && tipos.length) ? tipos : TIPOS_BASE;
+  const [f, setF] = useState(san(init ?? EMPTY_IT));
+  const F = (p) => setF(x => san({ ...x, ...p }));
+  
+  const isBento = f.tipo === "bento", isDoc = f.tipo === "docinhos", isGr = f.tipo && !isBento && !isDoc;
+  const temRet = ["chantilly","palitinhos"].includes(f.tipo);
+  const tams = isGr ? Object.entries(PRECOS[f.tipo]?.[f.formato] ?? {}).map(([k, v]) => ({ k, v })) : [];
+  const rT = isBento ? R_BENTO_T : R_TRAD;
+  const rG = isBento ? R_BENTO_G : R_GOUR;
+  const preco = calcItem(f, gAdic);
+  const ok = f.tipo && (isBento ? f.recheio1 : isDoc ? (f.quantidade && f.recheio1) : (f.fatias && f.massa && f.recheio1));
+
+  return (
+    <Card style={{ border:`2px solid ${pkL}` }} ch={
+      <div>
+        <div style={{ marginBottom:12 }}>
+          <label style={{ fontSize:13,fontWeight:700,color:"#6B4C7A",marginBottom:6,display:"block" }}>Tipo *</label>
+          {T.map(t => (
+            <div key={t.id} className="hov" style={{ border:`2px solid ${f.tipo===t.id?pk:"#E5D0EE"}`,borderRadius:12,padding:"9px 13px",cursor:"pointer",background:f.tipo===t.id?pkL:"#fff",marginBottom:6 }} onClick={() => F({ tipo:t.id,fatias:"",formato:"redondo",recheio1:"",recheio2:"" })}>
+              {t.fotoUrl
+                ? <img src={t.fotoUrl} style={{ width:"100%",height:80,objectFit:"cover",borderRadius:8,marginBottom:6 }} alt={t.nome} onError={e => { e.target.style.display="none"; }} />
+                : <div style={{ width:"100%",height:60,background:"#F3E6F0",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#888" }}>📷 sem foto</div>
+              }
+              <div style={{ fontWeight:800,fontSize:14,color:f.tipo===t.id?pk:"#1A1A1A" }}>{t.nome}</div>
+              <div style={{ fontSize:12,color:"#888" }}>{t.desc}</div>
+            </div>
+          ))}
+        </div>
+        
+        {isDoc && <>
+          <div style={{ marginBottom:12 }}>
+            <label style={{ fontSize:13,fontWeight:700 }}>Categoria *</label>
+            <div style={{ display:"flex",gap:8 }}>
+              {["tradicional","gourmet"].map(v => <BtnO key={v} active={f.subtipo===v} ch={v.charAt(0).toUpperCase()+v.slice(1)} st={{ flex:1 }} onClick={() => F({ subtipo:v,recheio1:"" })} />)}
+            </div>
+          </div>
+          <div style={{ marginBottom:12 }}>
+            <label style={{ fontSize:13,fontWeight:700 }}>Quantidade *</label>
+            <div style={{ display:"flex",gap:8 }}>
+              {["50","100"].map(v => <BtnO key={v} active={f.quantidade===v} ch={`${v} un · ${fmtR(PRECOS.docinhos[f.subtipo]?.[Number(v)] || 0)}`} st={{ flex:1 }} onClick={() => F({ quantidade:v })} />)}
+            </div>
+          </div>
+          <Slct label="Sabor *" value={f.recheio1} onChange={e => F({ recheio1:e.target.value })} options={<><option value="">Escolha</option>{(f.subtipo==="gourmet"?S_DOC_G:S_DOC_T).map(r => <option key={r} value={r}>{r}</option>)}</>} />
+        </>}
+        
+        {isBento && <>
+          <div style={{ marginBottom:12 }}>
+            <label style={{ fontSize:13,fontWeight:700 }}>Tipo *</label>
+            <div style={{ display:"flex",gap:8 }}>
+              {[{v:"tradicional",p:50},{v:"gourmet",p:55}].map(({v,p}) => <BtnO key={v} active={f.bentoTipo===v} ch={`${v.charAt(0).toUpperCase()+v.slice(1)} · ${fmtR(p)}`} st={{ flex:1 }} onClick={() => F({ bentoTipo:v,recheio1:"" })} />)}
+            </div>
+          </div>
+          <Slct label="Recheio *" value={f.recheio1} onChange={e => F({ recheio1:e.target.value })} options={<><option value="">Escolha</option>{(f.bentoTipo==="gourmet"?R_BENTO_G:R_BENTO_T).map(r => <option key={r} value={r}>{r}</option>)}</>} />
+        </>}
+        
+        {isGr && <>
+          {temRet && (
+            <div style={{ marginBottom:12 }}>
+              <label style={{ fontSize:13,fontWeight:700 }}>Formato *</label>
+              <div style={{ display:"flex",gap:8 }}>
+                {["redondo","retangular"].map(v => <BtnO key={v} active={f.formato===v} ch={v.charAt(0).toUpperCase()+v.slice(1)} st={{ flex:1 }} onClick={() => F({ formato:v,fatias:"" })} />)}
+              </div>
+            </div>
+          )}
+          <div style={{ marginBottom:12 }}>
+            <label style={{ fontSize:13,fontWeight:700 }}>Tamanho *</label>
+            <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:8 }}>
+              {tams.map(({k,v}) => (
+                <div key={k} style={{ border:`2px solid ${f.fatias===k?pk:"#E5D0EE"}`,borderRadius:12,padding:"9px 12px",cursor:"pointer",background:f.fatias===k?pkL:"#fff" }} onClick={() => F({ fatias:k })}>
+                  <div style={{ fontWeight:800 }}>{k} fatias</div>
+                  <div style={{ fontSize:13,color:pk,fontWeight:700 }}>{fmtR(v)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{ marginBottom:12 }}>
+            <label style={{ fontSize:13,fontWeight:700 }}>Massa *</label>
+            <div style={{ display:"flex",gap:8 }}>
+              {MASSAS.map(m => <BtnO key={m} active={f.massa===m} ch={m} st={{ flex:1 }} onClick={() => F({ massa:m })} />)}
+            </div>
+          </div>
+          <Slct label="1º Recheio *" value={f.recheio1} onChange={e => F({ recheio1:e.target.value })} options={<><option value="">Escolha</option><optgroup label="── Tradicionais">{rT.map(r => <option key={r} value={r}>{r}</option>)}</optgroup><optgroup label="── Gourmet ⭐">{rG.map(r => <option key={r} value={r}>{r}</option>)}</optgroup></>} />
+          <Slct label="2º Recheio (opcional)" value={f.recheio2} onChange={e => F({ recheio2:e.target.value })} options={<><option value="">Nenhum</option><optgroup label="── Tradicionais">{rT.map(r => <option key={r} value={r}>{r}</option>)}</optgroup><optgroup label="── Gourmet ⭐">{rG.map(r => <option key={r} value={r}>{r}</option>)}</optgroup></>} />
+        </>}
+        
+        {f.tipo && (
+          <Fld label="Obs. deste item">
+            <input value={f.obs} onChange={e => F({ obs:e.target.value })} style={{ width:"100%",border:"1px solid #E5D0EE",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",background:"#fff",fontFamily:"'Nunito',sans-serif",boxSizing:"border-box" }} />
+          </Fld>
+        )}
+        
+        {preco != null && <div style={{ background:pkL,borderRadius:10,padding:"8px 14px",marginBottom:12,fontWeight:800,color:pk }}>💰 {fmtR(preco)}</div>}
+        
+        <div style={{ display:"flex",gap:8 }}>
+          <BtnS ch="Cancelar" st={{ flex:1 }} onClick={onCancel} />
+          <Btn ch={isEdit ? "💾 Salvar" : "✅ Adicionar"} st={{ flex:2,opacity:ok?1:.5 }} disabled={!ok} onClick={() => ok && onSave(san(f))} />
+        </div>
+      </div>
+    } />
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\Slct.js ---
+
+import React from "react";
+
+export function Slct({ label, value, onChange, options }) {
+  const fs = { width:"100%",border:"1px solid #E5D0EE",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",background:"#fff",fontFamily:"'Nunito',sans-serif",boxSizing:"border-box" };
+  return (
+    <div style={{ marginBottom: 12 }}>
+      {label && <label style={{ fontSize:13,fontWeight:700,color:"#6B4C7A",marginBottom:4,display:"block" }}>{label}</label>}
+      <select value={value} onChange={onChange} style={fs}>{options}</select>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\StatusBar.js ---
+
+import React from "react";
+import { STATUS_UNICO, pk } from "../utils/constants";
+
+export function StatusBar({ status }) {
+  const idx = STATUS_UNICO.indexOf(status);
+  
+  return (
+    <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
+      {STATUS_UNICO.filter(s => s !== "Cancelado").map((s, i) => (
+        <div 
+          key={i} 
+          style={{ 
+            flex: 1, 
+            height: 6, 
+            borderRadius: 3, 
+            background: i === idx ? pk : (i < idx ? "#15803D" : "#E5D0EE") 
+          }} 
+        />
+      ))}
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\UpsellModal.js ---
+
+import React, { useState } from "react";
+import { Btn, BtnS } from "./Btn";
+import { UPSELL, pk, pkL } from "../utils/constants";
+import { fmtR } from "../utils/helpers";
+
+export function UpsellModal({ onAdd, onSkip }) {
+  const [sel, setSel] = useState([]);
+  const toggle = (id) => setSel(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
+  const total = sel.reduce((s, id) => s + (UPSELL.find(u => u.id === id)?.preco || 0), 0);
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 150, display: "flex", alignItems: "flex-end", justifyContent: "center" }} className="no-print">
+      <div className="fu" style={{ background: "#fff", borderRadius: "20px 20px 0 0", padding: 24, width: "100%", maxWidth: 500, maxHeight: "85vh", overflowY: "auto" }}>
+        <div style={{ textAlign: "center", marginBottom: 16 }}>
+          <div style={{ fontSize: 28 }}>✨</div>
+          <h3 style={{ fontWeight: 900, fontSize: 18 }}>Que tal adicionar?</h3>
+        </div>
+        
+        {UPSELL.map(u => (
+          <div 
+            key={u.id} 
+            onClick={() => toggle(u.id)} 
+            style={{ 
+              display: "flex", 
+              justifyContent: "space-between", 
+              border: `2px solid ${sel.includes(u.id) ? pk : "#E5D0EE"}`, 
+              borderRadius: 12, 
+              padding: "11px 14px", 
+              marginBottom: 8, 
+              cursor: "pointer", 
+              background: sel.includes(u.id) ? pkL : "#fff" 
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: 800 }}>{u.nome}</div>
+              <div style={{ fontSize: 12, color: "#888" }}>{u.desc}</div>
+            </div>
+            <div style={{ fontWeight: 900, color: pk }}>+{fmtR(u.preco)}</div>
+          </div>
+        ))}
+        
+        {sel.length > 0 && (
+          <div style={{ background: pkL, borderRadius: 10, padding: "8px 14px", marginBottom: 12, fontWeight: 800, color: pk }}>
+            Adicional: +{fmtR(total)}
+          </div>
+        )}
+        
+        <Btn 
+          ch={sel.length > 0 ? "✅ Adicionar e confirmar →" : "Confirmar sem adicionais →"} 
+          onClick={() => onAdd(UPSELL.filter(u => sel.includes(u.id)))} 
+        />
+        <BtnS ch="Pular" st={{ marginTop: 8 }} onClick={onSkip} />
+      </div>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\screens\AdminLogin.js ---
+
+import React, { useState } from "react";
+import { Fld } from "../components/Fld";
+import { Btn } from "../components/Btn";
+import { ADMIN_PASS, PIN_MASTER, pkL } from "../utils/constants";
+
+export function AdminLoginScreen({ onLogin, onBack, lockedUntil, lockLeft }) {
+  const [pass, setPass] = useState("");
+  const [pin, setPin] = useState("");
+  const [err, setErr] = useState(false);
+  const locked = Date.now() < lockedUntil;
+
+  return (
+    <div style={{ background: `linear-gradient(160deg, ${pkL}, #FDF6FB)`, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <div className="fu" style={{ background: "#fff", borderRadius: 20, padding: 26, width: "100%", maxWidth: 340 }}>
+        <h2 style={{ textAlign: "center" }}>🔐 Acesso Admin</h2>
+        {locked ? (
+          <div style={{ textAlign: "center", padding: 20 }}>🔒 Bloqueado: tente em {lockLeft}s</div>
+        ) : (
+          <>
+            <Fld label="Senha">
+              <input type="password" value={pass} onChange={e => { setPass(e.target.value); setErr(false); }} style={{ width: "100%", padding: "10px", borderRadius: 10, border: "1px solid #E5D0EE" }} />
+            </Fld>
+            <Fld label="PIN">
+              <input type="password" value={pin} onChange={e => { setPin(e.target.value); setErr(false); }} style={{ width: "100%", padding: "10px", borderRadius: 10, border: "1px solid #E5D0EE" }} />
+            </Fld>
+            {err && <div style={{ color: "#DC2626", marginBottom: 10, fontSize: 13 }}>Credenciais inválidas</div>}
+            <Btn ch="Acessar Painel" onClick={() => { if (pass === ADMIN_PASS && pin === PIN_MASTER) onLogin(); else setErr(true); }} />
+          </>
+        )}
+        <button onClick={onBack} style={{ width: "100%", background: "none", border: "none", color: "#9CA3AF", marginTop: 12, cursor: "pointer" }}>← Voltar</button>
+      </div>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\screens\AdminPanel.js ---
+
+import React, { useState } from "react";
+import { Hdr } from "../components/Hdr";
+import { Card } from "../components/Card";
+import { Fld } from "../components/Fld";
+import { Btn, BtnS } from "../components/Btn";
+import { Badge } from "../components/Badge"; // Certifique-se de criar este componente
+import { StatusBar } from "../components/StatusBar";
+import { fmtDt, fmtR, isSinalPago, san } from "../utils/helpers";
+import { STATUS_UNICO, STATUS_META, pk, pkL } from "../utils/constants";
+
+export function AdminPanel({ orders, setOrders, cfg, onBack, setLabelOrd }) {
+  const [selOrdId, setSelOrdId] = useState(null);
+  const selOrd = orders.find(o => o.id === selOrdId);
+  const [adminTab, setAdminTab] = useState("hoje");
+
+  const updateOrd = (id, patch) => setOrders(p => san(p.map(o => o.id !== id ? o : { ...o, ...patch })));
+  const removeOrd = (id) => setOrders(p => p.filter(o => o.id !== id));
+
+  // Se tem um pedido selecionado, mostra o detalhe dele
+  if (selOrd) {
+    const isEntrega = !selOrd.regiao?.isRetirada;
+    const saldoAdmin = (selOrd.valor || 0) - (selOrd.caucao || 0);
+    
+    return (
+      <div style={{ fontFamily: "'Nunito',sans-serif", background: "#FDF6FB", minHeight: "100vh" }}>
+        <Hdr title="Detalhes do Pedido" onBack={() => setSelOrdId(null)} />
+        <div style={{ padding: 16, maxWidth: 520, margin: "0 auto" }}>
+          <Card ch={<>
+            <div style={{ fontWeight: 900, fontSize: 17 }}>{selOrd.nome}</div>
+            <div style={{ fontSize: 13, color: "#888" }}>{selOrd.telefone}</div>
+            <div style={{ fontSize: 13, color: "#555", marginTop: 4 }}>📅 {fmtDt(selOrd.entrega)}</div>
+            <div style={{ marginTop: 8 }}><Badge s={selOrd.status} /></div>
+            
+            <div style={{ borderTop: `1px solid ${pkL}`, marginTop: 12, paddingTop: 12 }}>
+                <div style={{ fontWeight: 900 }}>Total: {selOrd.valor ? fmtR(selOrd.valor) : "Sob consulta"}</div>
+                {saldoAdmin != null && isSinalPago(selOrd.status) && (
+                    <div style={{ fontWeight: 900, color: "#B45309" }}>💳 SALDO: {fmtR(saldoAdmin)}</div>
+                )}
+            </div>
+          </>} />
+
+          {/* Gestão de Status */}
+          <Card ch={<>
+            <label style={{ fontSize: 13, fontWeight: 700 }}>Atualizar Status:</label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+              {STATUS_UNICO.map(st => (
+                <button key={st} style={{ background: selOrd.status === st ? pk : "#F3E6F0", color: selOrd.status === st ? "#fff" : "#6B4C7A", border: "none", borderRadius: 20, padding: "6px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer" }} onClick={() => updateOrd(selOrd.id, { status: st })}>
+                  {STATUS_META[st]?.em} {st}
+                </button>
+              ))}
+            </div>
+          </>} />
+
+          <Btn ch="🏷️ Etiqueta / Recibo" st={{ background: "#EFF6FF", color: "#1D4ED8", marginBottom: 8 }} onClick={() => setLabelOrd(san(selOrd))} />
+          <button style={{ width: "100%", background: "#FEF2F2", color: "#DC2626", border: "none", borderRadius: 12, padding: 12, fontWeight: 700, cursor: "pointer" }} onClick={() => removeOrd(selOrd.id)}>🗑 Excluir</button>
+        </div>
+      </div>
+    );
+  }
+
+  // Visualização da lista de pedidos (Abas)
+  return (
+    <div style={{ fontFamily: "'Nunito',sans-serif", background: "#FDF6FB", minHeight: "100vh" }}>
+      <Hdr title="PCP Gerência" onBack={onBack} />
+      
+      <div style={{ display: "flex", background: "#fff", borderBottom: `2px solid ${pkL}` }}>
+        {["hoje", "todos"].map(v => (
+          <button key={v} style={{ flex: 1, padding: 12, border: "none", background: "none", fontWeight: 700, color: adminTab === v ? pk : "#9CA3AF" }} onClick={() => setAdminTab(v)}>
+            {v === "hoje" ? "📅 Hoje" : "📋 Todos"}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ padding: 16 }}>
+        {orders.filter(o => adminTab === "hoje" ? o.entrega === new Date().toISOString().split("T")[0] : true).map(o => (
+          <div key={o.id} style={{ background: "#fff", padding: 14, borderRadius: 14, marginBottom: 8, cursor: "pointer", border: `1px solid ${pkL}` }} onClick={() => setSelOrdId(o.id)}>
+             <div style={{ fontWeight: 800 }}>{o.nome}</div>
+             <Badge s={o.status} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\screens\ClientLogin.js ---
+
+import React, { useState } from "react";
+import { Fld } from "../components/Fld";
+import { Btn, BtnS } from "../components/Btn";
+
+export function ClientLoginScreen({ clients, onLogin, onRegister, onBack }) {
+  const [f, setF] = useState({ nome: "", telefone: "", aniversario: "" });
+  const [err, setErr] = useState("");
+
+  const handleLogin = () => {
+    const c = clients.find(x => 
+      x.telefone === f.telefone && 
+      x.nome.toLowerCase() === f.nome.toLowerCase() &&
+      x.aniversario === f.aniversario
+    );
+    if (c) onLogin(c); else setErr("Dados incorretos ou conta não encontrada.");
+  };
+
+  return (
+    <div style={{ background: "#FFF9F2", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <div style={{ background: "#fff", borderRadius: 20, padding: 26, width: "100%", maxWidth: 340, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
+        <h2 style={{ textAlign: "center", color: "#4A2C2A" }}>Entrar</h2>
+        <Fld label="Nome"><input value={f.nome} onChange={e => setF(x => ({...x, nome: e.target.value}))} style={{ width: "100%", padding: "10px", borderRadius: 10, border: "1px solid #FFC2D1" }} /></Fld>
+        <Fld label="WhatsApp"><input value={f.telefone} onChange={e => setF(x => ({...x, telefone: e.target.value}))} style={{ width: "100%", padding: "10px", borderRadius: 10, border: "1px solid #FFC2D1" }} /></Fld>
+        <Fld label="Aniversário"><input type="date" value={f.aniversario} onChange={e => setF(x => ({...x, aniversario: e.target.value}))} style={{ width: "100%", padding: "10px", borderRadius: 10, border: "1px solid #FFC2D1" }} /></Fld>
+        
+        {err && <div style={{ color: "#DC2626", marginBottom: 10, fontSize: 13 }}>{err}</div>}
+        
+        <Btn ch="Entrar" st={{ marginBottom: 8, background: "#C25975" }} onClick={handleLogin} />
+        <BtnS ch="Criar conta" onClick={onRegister} />
+        <button onClick={onBack} style={{ width: "100%", background: "none", border: "none", color: "#9CA3AF", marginTop: 12, cursor: "pointer" }}>← Voltar</button>
+      </div>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\screens\ClientRegister.js ---
+
+import React, { useState } from "react";
+import { Fld } from "../components/Fld";
+import { Btn } from "../components/Btn";
+
+export function ClientRegisterScreen({ onSave, onBack }) {
+  const [f, setF] = useState({ nome: "", telefone: "", aniversario: "" });
+  const ok = f.nome && f.telefone && f.aniversario;
+
+  return (
+    <div style={{ background: "#FFF9F2", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <div style={{ background: "#fff", borderRadius: 20, padding: 26, width: "100%", maxWidth: 340, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
+        <h2 style={{ textAlign: "center", color: "#4A2C2A" }}>Criar Conta</h2>
+        
+        <Fld label="Nome completo *">
+          <input value={f.nome} onChange={e => setF(x => ({ ...x, nome: e.target.value }))} style={{ width: "100%", padding: "10px", borderRadius: 10, border: "1px solid #FFC2D1" }} />
+        </Fld>
+        
+        <Fld label="WhatsApp *">
+          <input value={f.telefone} onChange={e => setF(x => ({ ...x, telefone: e.target.value }))} style={{ width: "100%", padding: "10px", borderRadius: 10, border: "1px solid #FFC2D1" }} />
+        </Fld>
+        
+        <Fld label="Aniversário 🎂 *">
+          <input type="date" value={f.aniversario} onChange={e => setF(x => ({ ...x, aniversario: e.target.value }))} style={{ width: "100%", padding: "10px", borderRadius: 10, border: "1px solid #FFC2D1" }} />
+        </Fld>
+        
+        <Btn ch="Criar conta" st={{ marginBottom: 8, opacity: ok ? 1 : 0.5, background: "#E598A8" }} disabled={!ok} onClick={() => ok && onSave(f)} />
+        <button onClick={onBack} style={{ width: "100%", background: "none", border: "none", color: "#9CA3AF", cursor: "pointer" }}>← Voltar</button>
+      </div>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\screens\Home.js ---
+
+import React from "react";
+
+export function Home({ onLogin, onPedido, clientUser, cart, setScreen, NOME_APP }) {
+  const produtos = [
+    { nome: "Red Velvet", preco: "5,50" },
+    { nome: "Brigadeiro", preco: "6,00" },
+    { nome: "Leite Ninho", preco: "6,00" }
+  ];
+
+  return (
+    <div style={{ 
+      fontFamily: "'Nunito', sans-serif", 
+      background: "#FFF9F2",
+      minHeight: "100vh", 
+      display: "flex",
+      flexDirection: "column",
+      position: "relative"
+    }}>
+      
+      <header style={{ padding: "40px 20px 20px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+           <p style={{ margin: 0, fontSize: "14px", color: "#D89A9E", fontWeight: "bold" }}>Bem-vindo(a)!</p>
+           <h1 style={{ fontSize: 26, fontWeight: 900, color: "#4A2C2A", margin: 0, fontFamily: "serif" }}>{NOME_APP}</h1>
+        </div>
+        <div onClick={() => cart.length > 0 ? setScreen("pedido-cart") : null} 
+             style={{ background: "#fff", padding: "10px", borderRadius: "50%", boxShadow: "0 4px 10px rgba(0,0,0,0.05)", cursor: "pointer", fontSize: "20px" }}>
+          🛒
+        </div>
+      </header>
+
+      <div style={{ padding: "0 20px 20px 20px", zIndex: 2 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+            <h3 style={{ color: "#4A2C2A", fontSize: "16px", margin: 0 }}>Bolos Mais Pedidos</h3>
+            <span style={{ fontSize: "12px", color: "#A1887F", fontWeight: "bold" }}>Delícias do Dia</span>
+        </div>
+        
+        <div style={{ display: "flex", gap: "15px", overflowX: "auto", paddingBottom: "10px" }}>
+          {produtos.map((p, i) => (
+            <div key={i} style={{ 
+              minWidth: "140px", background: "#fff", padding: "12px", borderRadius: "15px", 
+              textAlign: "center", boxShadow: "0 5px 15px rgba(0,0,0,0.05)"
+            }}>
+              <div style={{ background: "#FDF0EF", height: "80px", borderRadius: "10px", marginBottom: "10px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "30px" }}>🍰</div>
+              <p style={{ fontSize: "12px", fontWeight: "700", margin: "5px 0", color: "#4A2C2A" }}>{p.nome}</p>
+              <span style={{ fontWeight: "800", color: "#4A2C2A", fontSize: "13px" }}>R$ {p.preco}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ 
+        background: "#FFC2D1", 
+        borderTopLeftRadius: "50px", 
+        borderTopRightRadius: "50px", 
+        flex: 1, 
+        display: "flex", 
+        flexDirection: "column",
+        marginTop: "10px"
+      }}>
+        
+        <div style={{
+           background: "#4A2C2A", 
+           borderTopLeftRadius: "50px",
+           borderTopRightRadius: "50px",
+           flex: 1,
+           marginTop: "60px",
+           padding: "0 20px 80px 20px",
+           display: "flex", flexDirection: "column", alignItems: "center",
+           position: "relative"
+        }}>
+            
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", width: "100%", maxWidth: "350px", marginTop: "-55px" }}>
+               
+               <div onClick={() => setScreen("client-register")} style={{ textAlign: "center", cursor: "pointer", background: "#E598A8", padding: "15px 5px", borderRadius: "30px 30px 10px 10px", width: "80px", boxShadow: "0 5px 15px rgba(0,0,0,0.2)" }}>
+                  <div style={{ fontSize: "20px", marginBottom: "2px" }}>👤</div>
+                  <p style={{ fontSize: "11px", color: "#4A2C2A", fontWeight: "800", margin: 0, lineHeight: "1.2" }}>Registrar<br/>Cliente</p>
+               </div>
+
+               <button onClick={onPedido} style={{ 
+                 width: "125px", height: "125px", borderRadius: "50%", 
+                 background: "linear-gradient(135deg, #E598A8, #C25975)", 
+                 color: "#fff", 
+                 border: "6px solid #E6C280",
+                 fontSize: "14px", fontWeight: "bold", 
+                 cursor: "pointer", boxShadow: "0 10px 25px rgba(0, 0, 0, 0.4)",
+                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                 transform: "translateY(-15px)"
+               }}>
+                 <span style={{ fontSize: "26px", marginBottom: "2px" }}>🎂</span>
+                 <span style={{ lineHeight: "1.2" }}>Fazer<br/>Pedido</span>
+               </button>
+
+               <div onClick={onLogin} style={{ textAlign: "center", cursor: "pointer", background: "#E6C280", padding: "15px 5px", borderRadius: "30px 30px 10px 10px", width: "80px", boxShadow: "0 5px 15px rgba(0,0,0,0.2)" }}>
+                  <div style={{ fontSize: "20px", marginBottom: "2px" }}>🔐</div>
+                  <p style={{ fontSize: "11px", color: "#4A2C2A", fontWeight: "800", margin: 0, lineHeight: "1.2" }}>Login<br/>Cliente</p>
+               </div>
+            </div>
+
+            <div style={{ marginTop: "40px", width: "100%", display: "flex", justifyContent: "center" }}>
+              <button onClick={() => setScreen("admin")} style={{ 
+                background: "transparent", border: "1px solid #E6C280", 
+                borderRadius: "25px", padding: "12px 30px", color: "#E6C280", cursor: "pointer", fontSize: "12px",
+                fontWeight: "700", display: "flex", alignItems: "center", gap: "8px"
+              }}>
+                <span style={{ fontSize: "16px" }}>⚙️</span> Acesso Administrativo
+              </button>
+            </div>
+
+        </div>
+      </div>
+
+      <footer style={{ 
+        position: "fixed", bottom: 0, width: "100%", 
+        background: "#FFF9F2", display: "flex", justifyContent: "space-around", 
+        padding: "15px 0", borderTop: "1px solid #E6C280",
+        fontSize: "22px", borderRadius: "20px 20px 0 0", zIndex: 10
+      }}>
+        <span style={{ cursor: "pointer", color: "#D89A9E" }}>🏠</span> 
+        <span style={{ cursor: "pointer", color: "#4A2C2A" }}>☰</span> 
+        <span onClick={() => setScreen("client-register")} style={{ cursor: "pointer", color: "#4A2C2A" }}>👤</span> 
+        <span style={{ cursor: "pointer", color: "#4A2C2A" }}>🛒</span>
+      </footer>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\screens\KernelLogin.js ---
+
+import React, { useState } from "react";
+import { Btn } from "../components/Btn";
+import { DEV_PASS } from "../utils/constants";
+
+export function KernelLoginScreen({ onLogin, onBack, lockedUntil, lockLeft }) {
+  const [pass, setPass] = useState("");
+  const [err, setErr] = useState(false);
+  const locked = Date.now() < lockedUntil;
+
+  return (
+    <div style={{ background: "#0a0a0a", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, fontFamily: "'Share Tech Mono', monospace" }}>
+      <div className="fu" style={{ background: "#111", border: "1px solid #00ff88", borderRadius: 12, padding: 28, width: "100%", maxWidth: 340 }}>
+        <div style={{ color: "#00ff88", fontSize: 24, marginBottom: 4, textAlign: "center" }}>▣ KERNEL ACCESS</div>
+        <div style={{ color: "#555", fontSize: 11, textAlign: "center", marginBottom: 20 }}>Sistema restrito — nível raiz</div>
+        
+        {locked ? (
+          <div style={{ color: "#ff4444", textAlign: "center", padding: 16 }}>🔒 BLOQUEADO — {lockLeft}s</div>
+        ) : (
+          <>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 11, color: "#00ff88", display: "block", marginBottom: 4 }}>SENHA_DEV:</label>
+              <input type="password" value={pass} onChange={e => { setPass(e.target.value); setErr(false); }} style={{ width: "100%", padding: "8px", borderRadius: 6, background: "#111", border: "1px solid #00ff88", color: "#00ff88" }} />
+            </div>
+            {err && <div style={{ color: "#ff4444", fontSize: 12, marginBottom: 10 }}>❌ Acesso negado</div>}
+            <Btn ch="AUTENTICAR →" st={{ background: "transparent", border: "1px solid #00ff88", color: "#00ff88" }} onClick={() => { if (pass === DEV_PASS) onLogin(); else setErr(true); }} />
+          </>
+        )}
+        <button onClick={onBack} style={{ width: "100%", background: "none", border: "none", color: "#333", marginTop: 14, cursor: "pointer", fontFamily: "'Share Tech Mono', monospace", fontSize: 12 }}>← ABORTAR</button>
+      </div>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\screens\PedidoCart.js ---
+
+import React from "react";
+import { Hdr } from "../components/Hdr";
+import { Btn } from "../components/Btn";
+import { ItemBuilder } from "../components/ItemBuilder";
+import { san, fmtR, getPrecoItem } from "../utils/helpers";
+
+export function PedidoCart({
+  cart, setCart, setScreen,
+  editIdx, setEditIdx,
+  addingIt, setAddingIt,
+  taxaReg, cartFinal, cartCaucao, cartSaldo,
+  cfg, TIPOS
+}) {
+  const pk = "#E91E8C";
+  const pkL = "#FFF0F8";
+
+  // Debug: Se essa mensagem aparecer no console do navegador, o componente carregou!
+  console.log("PedidoCart Renderizado. Itens:", cart.length);
+
+  return (
+    <div style={{ fontFamily: "'Nunito',sans-serif", background: "#FDF6FB", minHeight: "100vh" }}>
+      <Hdr 
+        title="🛒 Carrinho" 
+        onBack={() => setScreen("pedido-info")} 
+        right={cart.length > 0 ? <span style={{ background: pk, color: "#fff", borderRadius: 20, padding: "2px 10px", fontSize: 13, fontWeight: 800 }}>{cart.length}</span> : null} 
+      />
+      
+      <div style={{ padding: 16, maxWidth: 500, margin: "0 auto" }}>
+        
+        {/* Caso o carrinho esteja vazio */}
+        {cart.length === 0 && !addingIt && (
+          <div style={{ textAlign: "center", padding: "40px 0", color: "#888" }}>
+            <p>Seu carrinho está vazio.</p>
+            <Btn ch="Voltar para Pedido" onClick={() => setScreen("pedido-info")} />
+          </div>
+        )}
+
+        {cart.map((it, idx) => {
+          const preco = getPrecoItem(it, cfg?.adicionalGourmet);
+          const isU = it.tipo === "upsell";
+          // Safety check para evitar erro se TIPOS não estiver carregado
+          const prod = TIPOS ? TIPOS.find(t => t.id === it.tipo) : null;
+          const nome = isU ? it.nome : (prod?.nome || "Item");
+          
+          return editIdx === idx ? (
+            <div key={idx} className="fu">
+              <ItemBuilder 
+                init={it} 
+                isEdit 
+                gAdic={cfg?.adicionalGourmet} 
+                tipos={TIPOS} 
+                onSave={u => { setCart(p => san(p.map((x, i) => i === idx ? u : x))); setEditIdx(null); }} 
+                onCancel={() => setEditIdx(null)} 
+              />
+            </div>
+          ) : (
+            <div key={idx} className="hov" style={{ background: "#fff", border: `1px solid ${pkL}`, borderLeft: `4px solid ${pk}`, borderRadius: 14, padding: 14, marginBottom: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <div style={{ flex: 1 }}>
+                  {prod?.fotoUrl && !isU && <img src={prod.fotoUrl} style={{ width: 60, height: 40, objectFit: "cover", borderRadius: 8, marginBottom: 6 }} onError={e => { e.target.style.display="none"; }} alt="" />}
+                  <div style={{ fontWeight: 800, fontSize: 14, color: pk }}>{nome}</div>
+                  {!isU && <div>{[it.fatias ? `${it.fatias}fx (${it.formato})` : null, it.massa && it.tipo !== "docinhos" && it.tipo !== "bento" ? it.massa : null, it.recheio1 || null, it.recheio2 || null].filter(Boolean).map((x, i) => <div key={i} style={{ fontSize: 12, color: "#888" }}>{x}</div>)}</div>}
+                  {preco != null && <div style={{ fontSize: 14, fontWeight: 800, color: pk, marginTop: 6 }}>{fmtR(preco)}</div>}
+                </div>
+                <div style={{ display: "flex", gap: 6, alignItems: "flex-start" }}>
+                  {!isU && <button onClick={() => setEditIdx(idx)} style={{ background: pkL, color: pk, border: "none", borderRadius: 8, padding: "5px 10px", cursor: "pointer" }}>✏️</button>}
+                  <button onClick={() => setCart(p => p.filter((_, i) => i !== idx))} style={{ background: "#FEF2F2", color: "#DC2626", border: "none", borderRadius: 8, padding: "5px 10px", cursor: "pointer" }}>🗑</button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        
+        {addingIt && editIdx === null ? (
+          <div className="fu">
+            <ItemBuilder 
+              gAdic={cfg?.adicionalGourmet} 
+              tipos={TIPOS} 
+              onSave={it => { setCart(p => san([...p, it])); setAddingIt(false); }} 
+              onCancel={() => setAddingIt(false)} 
+            />
+          </div>
+        ) : (
+          <button onClick={() => setAddingIt(true)} style={{ width: "100%", border: `2px dashed ${pk}`, borderRadius: 14, padding: 14, background: "none", color: pk, fontSize: 14, fontWeight: 800, marginBottom: 14, cursor: "pointer" }}>
+            + Adicionar item
+          </button>
+        )}
+        
+        {cart.length > 0 && editIdx === null && !addingIt && (
+          <>
+            <div style={{ background: "#fff", border: `2px solid ${pkL}`, borderRadius: 14, padding: 14, marginBottom: 14 }}>
+              {taxaReg > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#888" }}><span>Taxa</span><span>{fmtR(taxaReg)}</span></div>}
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 15, fontWeight: 900 }}><span>Total</span><span style={{ color: pk }}>{fmtR(cartFinal)}</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#BE185D", fontWeight: 700 }}><span>Caução (50%)</span><span>{fmtR(cartCaucao)}</span></div>
+              {cartSaldo > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 15, fontWeight: 900, color: "#B45309", marginTop: 6, background: "#FFFBEB", padding: "4px 8px", borderRadius: 6 }}><span>💳 SALDO A COBRAR</span><span>{fmtR(cartSaldo)}</span></div>}
+            </div>
+            <Btn ch="Ver sugestões e confirmar →" onClick={() => setScreen("pedido-confirm")} />
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\screens\PedidoConfirm.js ---
+
+import React from "react";
+import { Hdr } from "../components/Hdr";
+import { Card } from "../components/Card";
+import { Btn, BtnS } from "../components/Btn";
+import { fmtDt, fmtR, getPrecoItem } from "../utils/helpers";
+import { pk, pkL } from "../utils/constants";
+
+export function PedidoConfirm({
+  cart, pedInfo, clientUser, cfg, taxaReg,
+  cartFinal, cartCaucao, cartSaldo,
+  setScreen, setUpsellOpen, TIPOS
+}) {
+  return (
+    <div style={{ fontFamily: "'Nunito',sans-serif", background: "#FDF6FB", minHeight: "100vh" }}>
+      <Hdr title="📋 Confirmar pedido" onBack={() => setScreen("pedido-cart")} />
+      
+      <div style={{ padding: 16, maxWidth: 500, margin: "0 auto" }}>
+        <Card ch={
+          <>
+            <div style={{ fontWeight: 900, fontSize: 16 }}>{clientUser?.nome || "Cliente"}</div>
+            <div style={{ fontSize: 13, color: "#888", marginBottom: 8 }}>
+              📅 {fmtDt(pedInfo.entrega)}{pedInfo.hora ? ` às ${pedInfo.hora}` : ""} {pedInfo.regiao ? `· ${pedInfo.regiao.nome}` : ""}
+            </div>
+            
+            {cart.map((it, i) => {
+              const p = getPrecoItem(it, cfg?.adicionalGourmet);
+              const isU = it.tipo === "upsell";
+              const nome = isU ? it.nome : (TIPOS.find(t => t.id === it.tipo)?.nome);
+              return (
+                <div key={i} style={{ borderTop: `1px solid ${pkL}`, paddingTop: 8, marginTop: 8 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: 14 }}>
+                    <span>{nome}</span>
+                    <span style={{ color: pk }}>{p != null ? fmtR(p) : "consultar"}</span>
+                  </div>
+                </div>
+              );
+            })}
+            
+            <div style={{ borderTop: `2px solid ${pkL}`, marginTop: 12, paddingTop: 12 }}>
+              {taxaReg > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#888" }}><span>Taxa</span><span>{fmtR(taxaReg)}</span></div>}
+              <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 900, fontSize: 15 }}><span>Total</span><span style={{ color: pk }}>{fmtR(cartFinal)}</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#BE185D", fontWeight: 700 }}><span>Caução (50%)</span><span>{fmtR(cartCaucao)}</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 15, fontWeight: 900, color: "#B45309", marginTop: 6, background: "#FFFBEB", padding: "4px 8px", borderRadius: 6 }}><span>💳 SALDO A COBRAR</span><span>{fmtR(cartSaldo)}</span></div>
+            </div>
+          </>
+        } />
+        
+        <Btn ch="✅ Confirmar pedido" onClick={() => setUpsellOpen(true)} />
+        <BtnS ch="← Editar" st={{ marginTop: 8 }} onClick={() => setScreen("pedido-cart")} />
+      </div>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\screens\PedidoDone.js ---
+
+import React, { useState } from "react";
+import { Btn, BtnS } from "../components/Btn";
+import { fmtR } from "../utils/helpers";
+import { PIX_KEY, pkD } from "../utils/constants";
+
+export function PedidoDoneScreen({ caucao, wppUrl, onClientArea, onHome, hasClient, total, saldo }) {
+  const [copied, setCopied] = useState(false);
+  const mensagem = total ? `Olá, seu pedido ficou no valor total de ${fmtR(total)}. Foi pago ${fmtR(caucao)} de entrada. SALDO A COBRAR: ${fmtR(saldo)}.` : "";
+  
+  return (
+    <div style={{ background: "#FDF6FB", minHeight: "100vh", fontFamily: "'Nunito',sans-serif" }}>
+      <div style={{ padding: "24px 18px", maxWidth: 480, margin: "0 auto", textAlign: "center" }}>
+        <div style={{ fontSize: 56 }}>🎉</div>
+        <h2>Pedido enviado!</h2>
+        
+        {caucao > 0 && (
+          <div style={{ background: "#F0FDF4", border: "1.5px solid #BBF7D0", borderRadius: 14, padding: 16, marginBottom: 14, textAlign: "left" }}>
+            <div style={{ fontWeight: 900, color: "#15803D" }}>PIX 🟢</div>
+            <div>Caução (50%): <strong>{fmtR(caucao)}</strong></div>
+            {total && <div>Total: <strong>{fmtR(total)}</strong></div>}
+            {saldo > 0 && <div style={{ fontWeight: 900, color: "#B45309", textTransform: "uppercase" }}>💳 SALDO A COBRAR: {fmtR(saldo)}</div>}
+            
+            <div style={{ background: "#fff", border: "1.5px solid #BBF7D0", borderRadius: 10, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, marginTop: 10 }}>
+              <span style={{ fontWeight: 700, color: "#333", fontSize: 14 }}>{PIX_KEY}</span>
+              <button 
+                onClick={() => { navigator.clipboard?.writeText(PIX_KEY); setCopied(true); }} 
+                style={{ background: "transparent", border: "1px solid #15803D", color: "#15803D", borderRadius: 8, padding: "4px 10px", cursor: "pointer", fontWeight: 700 }}
+              >
+                {copied ? "✓ Copiado!" : "Copiar"}
+              </button>
+            </div>
+          </div>
+        )}
+        
+        {mensagem && <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 10, padding: 12, marginBottom: 14, textAlign: "left", fontWeight: 700, color: "#B45309" }}>{mensagem}</div>}
+        
+        <a href={wppUrl} target="_blank" rel="noreferrer" style={{ display: "block", marginBottom: 10, textDecoration: "none" }}>
+          <Btn ch="💬 Enviar comprovante no WhatsApp" st={{ background: "#25D366" }} />
+        </a>
+        
+        {hasClient && <Btn ch="Ver meus pedidos" st={{ background: pkD, marginBottom: 8 }} onClick={onClientArea} />}
+        
+        <BtnS ch="Voltar ao início" onClick={onHome} />
+      </div>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\screens\PedidoInfo.js ---
+
+import React from "react";
+import { Hdr } from "../components/Hdr";
+import { Fld } from "../components/Fld";
+import { Btn } from "../components/Btn";
+
+export function PedidoInfo({ pedInfo, setPedInfo, onBack, onProximo }) {
+  return (
+    <div style={{ fontFamily: "'Nunito', sans-serif", background: "#FDF6FB", minHeight: "100vh" }}>
+      <Hdr title="📅 Dados do pedido" onBack={onBack} />
+      
+      <div style={{ padding: 18, maxWidth: 500, margin: "0 auto" }}>
+        <Fld label="Data de entrega">
+           <input 
+             type="date" 
+             value={pedInfo.entrega} 
+             onChange={e => setPedInfo({...pedInfo, entrega: e.target.value})} 
+             style={{ width: "100%", padding: "10px", borderRadius: 10, border: "1px solid #E5D0EE" }} 
+           />
+        </Fld>
+        
+        <Fld label="Observações">
+           <input 
+             value={pedInfo.obs} 
+             placeholder="Ex: Alergia a amendoim, entregar de tarde..."
+             onChange={e => setPedInfo({...pedInfo, obs: e.target.value})} 
+             style={{ width: "100%", padding: "10px", borderRadius: 10, border: "1px solid #E5D0EE" }} 
+           />
+        </Fld>
+        
+        <br />
+        <Btn ch="Montar meu pedido →" onClick={onProximo} />
+      </div>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\services\firebase.js ---
+
+import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+
+const firebaseConfig = {
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID
+};
+
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\utils\constants.js ---
+
+// ─── CONFIGURAÇÕES GERAIS ──────────────────────────────────────
+export const NOME_APP = "Fabiana Bolos";
+export const ADMIN_PASS = "Leo";
+export const PIN_MASTER = "Leo";
+export const DEV_PASS = "dev2026";
+export const PIX_KEY = "31999154485";
+export const WHATSAPP = "5531999154485";
+export const MAX_ATTEMPTS = 5;
+export const LOCK_MS = 120_000;
+export const AUTO_LOGOUT_MS = 15 * 60 * 1000;
+export const SOFT_LOCK_DAYS = 5;
+
+// Cores Padrão
+export const pk = "#E91E8C";
+export const pkD = "#C2185B";
+export const pkL = "#FFF0F8";
+
+export const DEFAULT_CFG = {
+  prazoMinHoras: 48, adicionalGourmet: 20, webhookUrl: "", licenseExpiry: "2027-12-31",
+  licenseCheckUrl: "", datasTravadas: [], dominiosAutorizados: [], coresPreset: "confeitaria",
+  regioes: [
+    { id: 1, nome: "Retirada no local", taxa: 0, isRetirada: true },
+    { id: 2, nome: "Entrega (A combinar)", taxa: 0, isRetirada: false },
+  ],
+};
+
+// ─── CARDÁPIO E PREÇOS ────────────────────────────────────────
+export const TIPOS_BASE = [
+  { id: "chantilly", nome: "Bolo Chantilly", desc: "A partir de R$ 110", fotoUrl: "" },
+  { id: "palitinhos", nome: "Palitinhos de Chocolate",desc: "A partir de R$ 130", fotoUrl: "" },
+  { id: "chocolatudo", nome: "Bolo Chocolatudo", desc: "A partir de R$ 175", fotoUrl: "" },
+  { id: "bento", nome: "Bentô Cake", desc: "R$ 50 – R$ 55", fotoUrl: "" },
+  { id: "docinhos", nome: "Docinhos", desc: "A partir de R$ 45/50 un",fotoUrl: "" },
+];
+
+export const PRECOS = {
+  chantilly: { redondo: { 12:110,20:165,30:195,40:220,60:280,100:330 }, retangular: { 25:185,50:260,80:300,100:350,120:380 } },
+  palitinhos: { redondo: { 12:130,20:185,30:220,40:240,60:310,100:370 }, retangular: { 25:200,50:260,80:330,100:390,120:420 } },
+  chocolatudo: { redondo: { 12:175,20:230,30:295,60:360 } },
+  bento: { tradicional: 50, gourmet: 55 },
+  docinhos: { tradicional: { 50:45,100:90 }, gourmet: { 50:55,100:110 } },
+};
+
+export const MASSAS = ["Baunilha", "Chocolate"];
+export const R_TRAD = ["Brigadeiro Preto","Brigadeiro Branco","Beijinho de Coco","Bicho de Pé","Churros","Doce de Leite","Doce de Leite c/ Chocolate","Mousse de Morango","Mousse de Maracujá","Mousse de Limão","Ninho","Prestígio (2 recheios)"];
+export const R_GOUR = ["Abacaxi","Ameixa","Creme de Nutella","Ganache Choc. Preto","Ganache Choc. Branco","Mousse de Chocolate","Nutella","Nozes","Ninho","Ninho c/ Morango","Pêssego","Romeu e Julieta"];
+export const R_BENTO_T = ["Brigadeiro Preto","Brigadeiro Branco","Beijinho de Coco","Doce de Leite","Mousse de Morango","Mousse de Maracujá","Ninho","Ninho c/ Morango"];
+export const R_BENTO_G = ["Nutella","Ninho com Nutella"];
+export const S_DOC_T = ["Beijinho de Coco","Brigadeiro","Brigadeiro Branco","Cajuzinho","Ele e Ela","Olho de Sogra","Ninho","Abacaxi c/ Coco","Maracujá c/ Coco","Morango c/ Coco","Limão c/ Coco"];
+export const S_DOC_G = ["Ninho com Nutella","Churros"];
+export const ALL_G = [...R_GOUR, ...R_BENTO_G];
+
+// ─── UPSELL (ADICIONAIS DO CARRINHO) ──────────────────────────
+export const UPSELL = [
+  { id:"topper", nome:"🎂 Topo de Bolo", desc:"Personalizado", preco: 18 },
+  { id:"docinhos50",nome:"🍬 Docinhos Trad.", desc:"50 unidades", preco: 45 },
+  { id:"bento_ex", nome:"🎁 Bentô Cake extra", desc:"Mini bolo 10cm", preco: 50 },
+];
+export const UPSELL_PRECOS = Object.fromEntries(UPSELL.map(u => [u.id, u.preco]));
+export const PRECOS_MESTRES = { cardapio: PRECOS, upsell: UPSELL_PRECOS };
+
+// ─── STATUS DO SISTEMA ────────────────────────────────────────
+export const STATUS_UNICO = [
+  "Aguardando Caução",
+  "Confirmado",
+  "Em Produção",
+  "Pronto para Entrega/Retirada",
+  "Finalizado",
+  "Cancelado",
+];
+
+export const STATUS_META = {
+  "Aguardando Caução": { bg:"#FFF7ED", text:"#C2410C", brd:"#FED7AA", em:"⏳" },
+  "Confirmado": { bg:"#F0FDF4", text:"#15803D", brd:"#BBF7D0", em:"✅" },
+  "Em Produção": { bg:"#FFFBEB", text:"#B45309", brd:"#FDE68A", em:"👩‍🍳" },
+  "Pronto para Entrega/Retirada": { bg:"#FAF5FF", text:"#7E22CE", brd:"#E9D5FF", em:"🎂" },
+  "Finalizado": { bg:"#F1F5F9", text:"#475569", brd:"#CBD5E1", em:"🚀" },
+  "Cancelado": { bg:"#FEF2F2", text:"#DC2626", brd:"#FECACA", em:"❌" },
+};
+
+export const STATUS_LEGACY_MAP = {
+  "aguardando caução": "Aguardando Caução",
+  "confirmado": "Confirmado",
+  "em preparo": "Em Produção",
+  "pronto": "Pronto para Entrega/Retirada",
+  "entregue": "Finalizado",
+  "cancelado": "Cancelado",
+};
+
+// ─── CSS GLOBAL ORIGINAL ──────────────────────────────────────
+export const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:wght@700&family=Share+Tech+Mono&display=swap');
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{margin:0;background:#FDF6FB;font-family:'Nunito',sans-serif;}
+button{cursor:pointer;transition:all .15s;}
+button:active{transform:scale(0.96);}
+.fu{animation:fadeUp .3s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.hov:hover{box-shadow:0 4px 18px rgba(233,30,140,.13);transform:translateY(-1px);}
+.pulse{animation:pulse .35s ease;}
+@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.25)}100%{transform:scale(1)}}
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-thumb{background:#F9A8D4;border-radius:3px;}
+.item-img{width:100%;height:120px;object-fit:cover;border-radius:12px 12px 0 0;}
+.status-bar{display:flex;gap:4px;margin-top:8px;}
+.status-step{flex:1;height:6px;border-radius:3px;background:#E5D0EE;}
+.status-step.active{background:#E91E8C;}
+.status-step.done{background:#15803D;}
+.kernel-bg{background:#0a0a0a;color:#00ff88;font-family:'Share Tech Mono',monospace;}
+.kernel-input{background:#111;border:1px solid #00ff88;color:#00ff88;font-family:'Share Tech Mono',monospace;padding:8px 12px;border-radius:6px;width:100%;outline:none;font-size:13px;}
+.kernel-btn{background:transparent;border:1px solid #00ff88;color:#00ff88;padding:6px 14px;border-radius:6px;font-family:'Share Tech Mono',monospace;cursor:pointer;}
+.kernel-btn:hover{background:#00ff88;color:#0a0a0a;}
+.kernel-tab{background:transparent;border:none;color:#555;padding:8px 14px;font-family:'Share Tech Mono',monospace;cursor:pointer;font-size:12px;border-bottom:2px solid transparent;}
+.kernel-tab.active{color:#00ff88;border-bottom-color:#00ff88;}
+@media print{.no-print{display:none!important;}.lbl{font-family:monospace;font-size:13px;line-height:1.8;color:#000;}}
+`;
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\utils\helpers.js ---
+
+import { PRECOS, ALL_G, PRECOS_MESTRES } from "./constants";
+
+// ─── STORAGE E CACHE ──────────────────────────────────────────
+export const LS = {
+  get: (k) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch { return null; } },
+  set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } },
+  del: (k) => { try { localStorage.removeItem(k); } catch {} },
+  check: () => { try { localStorage.setItem("_hc", "1"); return localStorage.getItem("_hc") === "1"; } catch { return false; } },
+  usage: () => {
+    try {
+      let t = 0; const items = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k?.startsWith("fab_")) {
+          const sz = (localStorage.getItem(k) || "").length * 2;
+          t += sz;
+          items.push({ k, sz: (sz / 1024).toFixed(1) + "KB" });
+        }
+      }
+      return { totalKB: (t / 1024).toFixed(1), items };
+    } catch { return { totalKB: "?", items: [] }; }
+  },
+};
+
+// ─── OBFUSCAÇÃO E SEGURANÇA ───────────────────────────────────
+export const obf = (s) => { try { return btoa(encodeURIComponent(s || "")); } catch { return s || ""; } };
+export const deobf = (s) => { try { return decodeURIComponent(atob(s || "")); } catch { return s || ""; } };
+export const obfClt = (c) => c ? { ...c, telefone: obf(c.telefone), aniversario: obf(c.aniversario || "") } : c;
+export const deobfClt = (c) => c ? { ...c, telefone: deobf(c.telefone), aniversario: deobf(c.aniversario || "") } : c;
+export const sanitizeInput = (text) => { if (!text) return ""; return String(text).replace(/[<>"'/]/g, ""); };
+
+export const gerarChecksumPedido = (pedido) => {
+  if (!pedido) return "";
+  const dados = [
+    pedido.id || "", pedido.nome || "", pedido.telefone || "",
+    pedido.entrega || "", pedido.valor || 0, pedido.caucao || 0,
+    pedido.status || "", JSON.stringify(pedido.itens || []),
+  ].join("|");
+  let hash = 0;
+  for (let i = 0; i < dados.length; i++) {
+    const char = dados.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(16).toUpperCase().padStart(8, "0");
+};
+
+// ─── UTILITÁRIOS E FORMATAÇÃO ─────────────────────────────────
+export const san = (d) => JSON.parse(JSON.stringify(d));
+export const fmtR = (v) => `R$ ${Number(v).toFixed(2).replace(".", ",")}`;
+export const fmtDt = (d) => { if (!d) return "—"; const [y, m, day] = d.split("-"); return `${day}/${m}/${y}`; };
+export const today = () => new Date().toISOString().split("T")[0];
+export const minDt = (h) => { const d = new Date(); d.setHours(d.getHours() + Number(h)); return d.toISOString().split("T")[0]; };
+
+export const maskPh = (v) => {
+  let r = v.replace(/\D/g, "").slice(0, 11);
+  if (r.length > 10) return r.replace(/^(\d\d)(\d{5})(\d{4})/, "($1) $2-$3");
+  if (r.length > 6) return r.replace(/^(\d\d)(\d{4})(\d{0,4})/, "($1) $2-$3");
+  if (r.length > 2) return r.replace(/^(\d\d)(\d{0,5})/, "($1) $2");
+  return r;
+};
+
+// ─── REGRAS DE NEGÓCIO E DATAS ────────────────────────────────
+export const isMonday = (s) => { const d = new Date(s + "T12:00:00"); return d.getDay() === 1; };
+export const isTravada = (s, arr) => (arr || []).includes(s);
+
+export const validateDate = (s, cfg) => {
+  if (!s) return { ok: false, msg: "" };
+  if (s < minDt(cfg.prazoMinHoras)) return { ok: false, msg: `⏰ Prazo mínimo ${cfg.prazoMinHoras}h. Disponível a partir de ${fmtDt(minDt(cfg.prazoMinHoras))}` };
+  if (isMonday(s)) return { ok: false, msg: "❌ Não atendemos às segundas-feiras" };
+  if (isTravada(s, cfg.datasTravadas)) return { ok: false, msg: "❌ Data bloqueada — indisponível" };
+  return { ok: true, msg: "" };
+};
+
+export const isSinalPago = (status) => ["Confirmado","Em Produção","Pronto para Entrega/Retirada","Finalizado"].includes(status);
+export const calcPontos = (cId, orders) => Math.floor(orders.filter(o => o.clienteId === cId && o.status !== "Cancelado").reduce((s, o) => s + Number(o.valor || 0), 0));
+
+// ─── MOTOR DE PRECIFICAÇÃO (O CÉREBRO) ────────────────────────
+export const calcItem = (it, gAdic = 0) => {
+  if (!it.tipo) return null;
+  if (it.tipo === "upsell") return null;
+  
+  let b = null;
+  if (it.tipo === "bento") b = PRECOS.bento[it.bentoTipo ?? "tradicional"] ?? 50;
+  else if (it.tipo === "docinhos") b = PRECOS.docinhos[it.subtipo ?? "tradicional"]?.[Number(it.quantidade ?? 50)] ?? null;
+  else b = PRECOS[it.tipo]?.[it.formato ?? "redondo"]?.[Number(it.fatias)] ?? null;
+  
+  if (b === null) return null;
+  
+  const g = (ALL_G.includes(it.recheio1) ? 1 : 0) + (ALL_G.includes(it.recheio2) ? 1 : 0);
+  return b + g * Number(gAdic);
+};
+
+export const getPrecoItem = (item, adicionalGourmet = 0) => {
+  if (!item || !item.tipo) return null;
+  if (item.tipo === "upsell" && item.upsellId) return PRECOS_MESTRES.upsell[item.upsellId] ?? null;
+  return calcItem(item, adicionalGourmet);
+};
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\App.js ---
+
+import React, { useState, useEffect } from "react";
+import { NOME_APP, CSS, DEFAULT_CFG, TIPOS_BASE } from "./utils/constants";
+import { LS, san, getPrecoItem, fmtR, fmtDt, gerarChecksumPedido } from "./utils/helpers";
+
+import { Home } from "./screens/Home";
+import { PedidoInfo } from "./screens/PedidoInfo";
+import { PedidoCart } from "./screens/PedidoCart";
+import { PedidoConfirm } from "./screens/PedidoConfirm";
+import { PedidoDoneScreen } from "./screens/PedidoDone";
+import { AdminPanel } from "./screens/AdminPanel";
+import { ClientRegisterScreen } from "./screens/ClientRegister";
+import { ClientLoginScreen } from "./screens/ClientLogin";
+import { UpsellModal } from "./components/UpsellModal";
+
+export default function App() {
+  const [screen, setScreen] = useState("home");
+  const [cart, setCart] = useState([]);
+  
+  // Estados para Usuários e Login
+  const [orders, setOrders] = useState(() => LS.get("fab_orders") ?? []);
+  const [clients, setClients] = useState(() => LS.get("fab_clients") ?? []);
+  const [clientUser, setClientUser] = useState(() => LS.get("fab_active_user") ?? null);
+  
+  const [pedInfo, setPedInfo] = useState({ entrega: "", hora: "", obs: "", regiao: null, enderecoEntrega: "" });
+  const [cfg, setCfg] = useState(() => LS.get("fab_cfg") ?? san(DEFAULT_CFG));
+  
+  const [editIdx, setEditIdx] = useState(null);
+  const [addingIt, setAddingIt] = useState(false);
+  const [upsellOpen, setUpsellOpen] = useState(false);
+  const [doneData, setDoneData] = useState({ caucao: 0, wppUrl: "", total: null, saldo: null });
+
+  useEffect(() => { LS.set("fab_orders", orders); }, [orders]);
+  useEffect(() => { LS.set("fab_clients", clients); }, [clients]);
+  useEffect(() => { LS.set("fab_active_user", clientUser); }, [clientUser]);
+
+  const cartTotal = cart.reduce((s, it) => s + (getPrecoItem(it, cfg.adicionalGourmet) ?? 0), 0);
+  const taxaReg = pedInfo.regiao?.isRetirada ? 0 : Number(pedInfo.regiao?.taxa || 0);
+  const cartFinal = cartTotal + taxaReg;
+
+  const confirmarPedidoFinal = (extraItems = []) => {
+    const allCart = [...cart, ...extraItems.map(u => ({ tipo: "upsell", upsellId: u.id, nome: u.nome, desc: u.desc }))];
+    const totalFinal = allCart.reduce((s, it) => s + (getPrecoItem(it, cfg.adicionalGourmet) ?? 0), 0) + taxaReg;
+    
+    const novoPedido = san({
+      id: Date.now(),
+      nome: clientUser?.nome || "Cliente",
+      itens: allCart,
+      valor: totalFinal,
+      status: "Aguardando Caução",
+      criadoEm: new Date().toISOString()
+    });
+
+    setOrders(p => [...p, novoPedido]);
+    setCart([]);
+    setScreen("pedido-done");
+  };
+
+  return (
+    <div className="App">
+       <style>{CSS}</style>
+       
+       {upsellOpen && (
+         <UpsellModal onAdd={(ex) => { setUpsellOpen(false); confirmarPedidoFinal(ex); }} onSkip={() => { setUpsellOpen(false); confirmarPedidoFinal([]); }} />
+       )}
+
+       {screen === "home" && (
+         <Home 
+            NOME_APP={NOME_APP} 
+            cart={cart} 
+            clientUser={clientUser}
+            setScreen={setScreen} 
+            onLogout={() => setClientUser(null)}
+            onPedido={() => {
+                if (!clientUser) {
+                    alert("Por favor, faça login ou crie uma conta para pedir!");
+                    setScreen("client-login");
+                } else {
+                    setScreen("pedido-info");
+                }
+            }} 
+            onLogin={() => setScreen("client-login")} 
+         />
+       )}
+
+       {screen === "client-register" && (
+         <ClientRegisterScreen 
+            onSave={(c) => { setClients([...clients, c]); setClientUser(c); setScreen("home"); }}
+            onBack={() => setScreen("home")} 
+         />
+       )}
+
+       {screen === "client-login" && (
+         <ClientLoginScreen 
+            clients={clients}
+            onLogin={(c) => { setClientUser(c); setScreen("home"); }}
+            onRegister={() => setScreen("client-register")}
+            onBack={() => setScreen("home")}
+         />
+       )}
+
+       {screen === "pedido-info" && (<PedidoInfo pedInfo={pedInfo} setPedInfo={setPedInfo} onBack={() => setScreen("home")} onProximo={() => setScreen("pedido-cart")} />)}
+       {screen === "pedido-cart" && (<PedidoCart cart={cart} setCart={setCart} setScreen={setScreen} />)}
+       {screen === "pedido-done" && (<PedidoDoneScreen onHome={() => setScreen("home")} />)}
+       {screen === "admin" && (<AdminPanel orders={orders} setOrders={setOrders} onBack={() => setScreen("home")} />)}
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\index.js ---
+
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);

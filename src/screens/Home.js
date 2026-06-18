@@ -1,124 +1,151 @@
 import React from "react";
+import { TIPOS_BASE, pk, pkD, pkL } from "../utils/constants";
 
-export function Home({ onLogin, onPedido, clientUser, cart, setScreen, NOME_APP }) {
-  const produtos = [
-    { nome: "Red Velvet", preco: "5,50" },
-    { nome: "Brigadeiro", preco: "6,00" },
-    { nome: "Leite Ninho", preco: "6,00" }
-  ];
+const DESTAQUES = [
+  { nome: "Bolo Chantilly",          preco: "a partir de R$ 110",  emoji: "🎂" },
+  { nome: "Palitinhos de Chocolate", preco: "a partir de R$ 130",  emoji: "🍫" },
+  { nome: "Bentô Cake",              preco: "R$ 50 – R$ 55",       emoji: "🎁" },
+];
 
+export function Home({ NOME_APP, cart, clientUser, maintenanceMode, setScreen, onLogoClick, onPedido, onLogin, onAccount }) {
   return (
-    <div style={{ 
-      fontFamily: "'Nunito', sans-serif", 
+    <div style={{
+      fontFamily: "'Nunito', sans-serif",
       background: "#FFF9F2",
-      minHeight: "100vh", 
+      minHeight: "100vh",
       display: "flex",
       flexDirection: "column",
-      position: "relative"
+      position: "relative",
     }}>
-      
-      <header style={{ padding: "40px 20px 20px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-           <p style={{ margin: 0, fontSize: "14px", color: "#D89A9E", fontWeight: "bold" }}>Bem-vindo(a)!</p>
-           <h1 style={{ fontSize: 26, fontWeight: 900, color: "#4A2C2A", margin: 0, fontFamily: "serif" }}>{NOME_APP}</h1>
+      {/* Header */}
+      <header style={{ padding: "40px 20px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div onClick={onLogoClick} style={{ cursor: "pointer" }}>
+          <p style={{ margin: 0, fontSize: 13, color: "#D89A9E", fontWeight: 700 }}>Bem-vinda! 🌸</p>
+          <h1 style={{ fontSize: 26, fontWeight: 900, color: "#4A2C2A", margin: 0, fontFamily: "serif" }}>{NOME_APP}</h1>
+          {clientUser && <p style={{ margin: "2px 0 0", fontSize: 12, color: "#A1887F" }}>Olá, {clientUser.nome?.split(" ")[0]}!</p>}
         </div>
-        <div onClick={() => cart.length > 0 ? setScreen("pedido-cart") : null} 
-             style={{ background: "#fff", padding: "10px", borderRadius: "50%", boxShadow: "0 4px 10px rgba(0,0,0,0.05)", cursor: "pointer", fontSize: "20px" }}>
+        <div
+          onClick={() => cart.length > 0 ? setScreen("pedido-cart") : null}
+          style={{ background: "#fff", padding: 10, borderRadius: "50%", boxShadow: "0 4px 10px rgba(0,0,0,0.06)", cursor: "pointer", fontSize: 20, position: "relative" }}
+        >
           🛒
+          {cart.length > 0 && (
+            <span style={{ position: "absolute", top: -4, right: -4, background: pk, color: "#fff", borderRadius: "50%", width: 18, height: 18, fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {cart.length}
+            </span>
+          )}
         </div>
       </header>
 
-      <div style={{ padding: "0 20px 20px 20px", zIndex: 2 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-            <h3 style={{ color: "#4A2C2A", fontSize: "16px", margin: 0 }}>Bolos Mais Pedidos</h3>
-            <span style={{ fontSize: "12px", color: "#A1887F", fontWeight: "bold" }}>Delícias do Dia</span>
+      {/* Manutenção */}
+      {maintenanceMode && (
+        <div style={{ background: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: 10, margin: "0 20px 12px", padding: "10px 14px", fontSize: 13, color: "#92400E", fontWeight: 700 }}>
+          🔧 Sistema em manutenção — pedidos temporariamente suspensos
         </div>
-        
-        <div style={{ display: "flex", gap: "15px", overflowX: "auto", paddingBottom: "10px" }}>
-          {produtos.map((p, i) => (
-            <div key={i} style={{ 
-              minWidth: "140px", background: "#fff", padding: "12px", borderRadius: "15px", 
-              textAlign: "center", boxShadow: "0 5px 15px rgba(0,0,0,0.05)"
+      )}
+
+      {/* Destaques */}
+      <div style={{ padding: "0 20px 16px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <h3 style={{ color: "#4A2C2A", fontSize: 15, margin: 0, fontWeight: 800 }}>Nossas Delícias</h3>
+          <span style={{ fontSize: 11, color: "#A1887F", fontWeight: 700 }}>Feito com amor 🧁</span>
+        </div>
+        <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 8 }}>
+          {DESTAQUES.map((p, i) => (
+            <div key={i} style={{
+              minWidth: 130, background: "#fff", padding: 12, borderRadius: 14,
+              textAlign: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", flexShrink: 0,
             }}>
-              <div style={{ background: "#FDF0EF", height: "80px", borderRadius: "10px", marginBottom: "10px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "30px" }}>🍰</div>
-              <p style={{ fontSize: "12px", fontWeight: "700", margin: "5px 0", color: "#4A2C2A" }}>{p.nome}</p>
-              <span style={{ fontWeight: "800", color: "#4A2C2A", fontSize: "13px" }}>R$ {p.preco}</span>
+              <div style={{ background: "#FDF0EF", height: 70, borderRadius: 10, marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>
+                {p.emoji}
+              </div>
+              <p style={{ fontSize: 11, fontWeight: 800, margin: "0 0 3px", color: "#4A2C2A", lineHeight: 1.3 }}>{p.nome}</p>
+              <span style={{ fontWeight: 700, color: pk, fontSize: 10 }}>{p.preco}</span>
             </div>
           ))}
         </div>
       </div>
 
-      <div style={{ 
-        background: "#FFC2D1", 
-        borderTopLeftRadius: "50px", 
-        borderTopRightRadius: "50px", 
-        flex: 1, 
-        display: "flex", 
-        flexDirection: "column",
-        marginTop: "10px"
-      }}>
-        
+      {/* Corpo escuro */}
+      <div style={{ background: "#FFC2D1", borderTopLeftRadius: 50, borderTopRightRadius: 50, flex: 1, display: "flex", flexDirection: "column", marginTop: 10 }}>
         <div style={{
-           background: "#4A2C2A", 
-           borderTopLeftRadius: "50px",
-           borderTopRightRadius: "50px",
-           flex: 1,
-           marginTop: "60px",
-           padding: "0 20px 80px 20px",
-           display: "flex", flexDirection: "column", alignItems: "center",
-           position: "relative"
+          background: "#4A2C2A",
+          borderTopLeftRadius: 50, borderTopRightRadius: 50,
+          flex: 1, marginTop: 60, padding: "0 20px 100px",
+          display: "flex", flexDirection: "column", alignItems: "center",
+          position: "relative",
         }}>
-            
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", width: "100%", maxWidth: "350px", marginTop: "-55px" }}>
-               
-               <div onClick={() => setScreen("client-register")} style={{ textAlign: "center", cursor: "pointer", background: "#E598A8", padding: "15px 5px", borderRadius: "30px 30px 10px 10px", width: "80px", boxShadow: "0 5px 15px rgba(0,0,0,0.2)" }}>
-                  <div style={{ fontSize: "20px", marginBottom: "2px" }}>👤</div>
-                  <p style={{ fontSize: "11px", color: "#4A2C2A", fontWeight: "800", margin: 0, lineHeight: "1.2" }}>Registrar<br/>Cliente</p>
-               </div>
+          {/* Botões principais */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", width: "100%", maxWidth: 340, marginTop: -55 }}>
 
-               <button onClick={onPedido} style={{ 
-                 width: "125px", height: "125px", borderRadius: "50%", 
-                 background: "linear-gradient(135deg, #E598A8, #C25975)", 
-                 color: "#fff", 
-                 border: "6px solid #E6C280",
-                 fontSize: "14px", fontWeight: "bold", 
-                 cursor: "pointer", boxShadow: "0 10px 25px rgba(0, 0, 0, 0.4)",
-                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                 transform: "translateY(-15px)"
-               }}>
-                 <span style={{ fontSize: "26px", marginBottom: "2px" }}>🎂</span>
-                 <span style={{ lineHeight: "1.2" }}>Fazer<br/>Pedido</span>
-               </button>
-
-               <div onClick={onLogin} style={{ textAlign: "center", cursor: "pointer", background: "#E6C280", padding: "15px 5px", borderRadius: "30px 30px 10px 10px", width: "80px", boxShadow: "0 5px 15px rgba(0,0,0,0.2)" }}>
-                  <div style={{ fontSize: "20px", marginBottom: "2px" }}>🔐</div>
-                  <p style={{ fontSize: "11px", color: "#4A2C2A", fontWeight: "800", margin: 0, lineHeight: "1.2" }}>Login<br/>Cliente</p>
-               </div>
+            <div
+              onClick={onAccount}
+              style={{ textAlign: "center", cursor: "pointer", background: "#E598A8", padding: "15px 5px", borderRadius: "30px 30px 10px 10px", width: 78, boxShadow: "0 5px 15px rgba(0,0,0,0.2)" }}
+            >
+              <div style={{ fontSize: 20, marginBottom: 2 }}>{clientUser ? "👤" : "🔑"}</div>
+              <p style={{ fontSize: 10, color: "#4A2C2A", fontWeight: 800, margin: 0, lineHeight: 1.2 }}>
+                {clientUser ? "Minha\nConta" : "Entrar /\nCadastrar"}
+              </p>
             </div>
 
-            <div style={{ marginTop: "40px", width: "100%", display: "flex", justifyContent: "center" }}>
-              <button onClick={() => setScreen("admin")} style={{ 
-                background: "transparent", border: "1px solid #E6C280", 
-                borderRadius: "25px", padding: "12px 30px", color: "#E6C280", cursor: "pointer", fontSize: "12px",
-                fontWeight: "700", display: "flex", alignItems: "center", gap: "8px"
-              }}>
-                <span style={{ fontSize: "16px" }}>⚙️</span> Acesso Administrativo
-              </button>
-            </div>
+            <button
+              onClick={onPedido}
+              disabled={maintenanceMode}
+              style={{
+                width: 125, height: 125, borderRadius: "50%",
+                background: maintenanceMode
+                  ? "#999"
+                  : "linear-gradient(135deg, #E598A8, #C25975)",
+                color: "#fff", border: "6px solid #E6C280",
+                fontSize: 13, fontWeight: 800, cursor: maintenanceMode ? "not-allowed" : "pointer",
+                boxShadow: "0 10px 25px rgba(0,0,0,0.35)",
+                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                transform: "translateY(-15px)", lineHeight: 1.3,
+              }}
+            >
+              <span style={{ fontSize: 26, marginBottom: 3 }}>🎂</span>
+              <span>Fazer<br />Pedido</span>
+            </button>
 
+            <div
+              onClick={() => setScreen("client-login")}
+              style={{ textAlign: "center", cursor: "pointer", background: "#E6C280", padding: "15px 5px", borderRadius: "30px 30px 10px 10px", width: 78, boxShadow: "0 5px 15px rgba(0,0,0,0.2)" }}
+            >
+              <div style={{ fontSize: 20, marginBottom: 2 }}>🛒</div>
+              <p style={{ fontSize: 10, color: "#4A2C2A", fontWeight: 800, margin: 0, lineHeight: 1.2 }}>
+                Meus<br />Pedidos
+              </p>
+            </div>
+          </div>
+
+          {/* Acesso admin */}
+          <div style={{ marginTop: 40 }}>
+            <button
+              onClick={() => setScreen("admin-login")}
+              style={{
+                background: "transparent", border: "1px solid #E6C280",
+                borderRadius: 25, padding: "11px 28px", color: "#E6C280",
+                cursor: "pointer", fontSize: 12, fontWeight: 700,
+                display: "flex", alignItems: "center", gap: 8,
+              }}
+            >
+              <span style={{ fontSize: 15 }}>⚙️</span> Acesso Administrativo
+            </button>
+          </div>
         </div>
       </div>
 
-      <footer style={{ 
-        position: "fixed", bottom: 0, width: "100%", 
-        background: "#FFF9F2", display: "flex", justifyContent: "space-around", 
-        padding: "15px 0", borderTop: "1px solid #E6C280",
-        fontSize: "22px", borderRadius: "20px 20px 0 0", zIndex: 10
+      {/* Footer */}
+      <footer style={{
+        position: "fixed", bottom: 0, width: "100%",
+        background: "#FFF9F2", display: "flex", justifyContent: "space-around",
+        padding: "13px 0", borderTop: "1px solid #E6C280",
+        fontSize: 22, borderRadius: "20px 20px 0 0", zIndex: 10,
       }}>
-        <span style={{ cursor: "pointer", color: "#D89A9E" }}>🏠</span> 
-        <span style={{ cursor: "pointer", color: "#4A2C2A" }}>☰</span> 
-        <span onClick={() => setScreen("client-register")} style={{ cursor: "pointer", color: "#4A2C2A" }}>👤</span> 
-        <span style={{ cursor: "pointer", color: "#4A2C2A" }}>🛒</span>
+        <span onClick={() => setScreen("home")}         style={{ cursor: "pointer", color: pk }}>🏠</span>
+        <span onClick={onPedido}                        style={{ cursor: "pointer", color: "#4A2C2A" }}>🎂</span>
+        <span onClick={onAccount}                       style={{ cursor: "pointer", color: "#4A2C2A" }}>👤</span>
+        <span onClick={() => cart.length > 0 ? setScreen("pedido-cart") : null} style={{ cursor: "pointer", color: "#4A2C2A" }}>🛒</span>
       </footer>
     </div>
   );
