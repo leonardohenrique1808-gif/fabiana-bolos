@@ -1,7 +1,23 @@
+// src/App.js
 import React, { useState, useEffect, useRef } from "react";
-import { CSS, NOME_APP, DEFAULT_CFG, TIPOS_BASE, STATUS_UNICO, STATUS_LEGACY_MAP, WHATSAPP, PIX_KEY } from "./utils/constants";
-import { LS, san, getPrecoItem, fmtR, fmtDt, today, minDt, validateDate, gerarChecksumPedido, sanitizeInput, obfClt, deobfClt, maskPh } from "./utils/helpers";
+import { CSS, NOME_APP, DEFAULT_CFG, TIPOS_BASE, STATUS_UNICO, STATUS_LEGACY_MAP, WHATSAPP } from "./utils/constants";
+import { san, getPrecoItem, fmtR, fmtDt, gerarChecksumPedido, sanitizeInput, obfClt, deobfClt, maskPh } from "./utils/helpers";
 
+// ── Firebase ───────────────────────────────────────────────────────
+import {
+  subscribeOrders,
+  subscribeClients,
+  saveOrder,
+  saveAllOrders,
+  deleteOrder,
+  saveClient,
+  saveAllClients,
+  getCfg,  saveCfg,
+  getTipos, saveTipos,
+  getMaintenance, saveMaintenance,
+} from "./utils/db";
+
+// ── Telas e componentes ────────────────────────────────────────────
 import { Home }                 from "./screens/Home";
 import { PedidoInfo }           from "./screens/PedidoInfo";
 import { PedidoCart }           from "./screens/PedidoCart";
@@ -19,47 +35,123 @@ import { LabelModal }           from "./components/LabelModal";
 import { PinDlg }               from "./components/PinDlg";
 
 export default function App() {
-  // ── Dados persistidos ─────────────────────────────────────────
-  const [cfg,             setCfg]            = useState(() => LS.get("fab_cfg") ?? san(DEFAULT_CFG));
-  const [orders,          setOrders]         = useState(() =>
-    (LS.get("fab_orders") ?? []).map(o => {
-      if (!STATUS_UNICO.includes(o.status))
-        o.status = STATUS_LEGACY_MAP[o.status?.toLowerCase()] || "Aguardando Caução";
-      if (!o.checksum) o.checksum = gerarChecksumPedido(o);
-      return o;
-    })
-  );
-  const [clients,         setClients]        = useState(() => (LS.get("fab_clients") ?? []).map(deobfClt));
-  const [clientUser,      setClientUser]     = useState(() => { const s = LS.get("fab_session"); return s ? deobfClt(s) : null; });
-  const [maintenanceMode, setMaintenanceMode]= useState(() => LS.get("fab_maintenance") ?? false);
-  const [tipos,           setTipos]          = useState(() => LS.get("fab_tipos") ?? san(TIPOS_BASE));
+  // ── Estado principal ────────────────────────────────────────────
+  const [cfg,             setCfgState]       = useState(san(DEFAULT_CFG));
+  const [orders,          setOrders]         = useState([]);
+  const [clients,         setClients]        = useState([]);
+  const [clientUser,      setClientUser]     = useState(null);
+  const [maintenanceMode, setMaintenanceModeState] = useState(false);
+  const [tipos,           setTiposState]     = useState(san(TIPOS_BASE));
+  const [loading,         setLoading]        = useState(true);
+
   const TIPOS = tipos?.length ? tipos : TIPOS_BASE;
 
-  // ── Navegação ─────────────────────────────────────────────────
+  // ── Wrappers que salvam no Firestore ao mudar estado ────────────
+  const setCfg = (valOrFn) => {
+    setCfgState(prev => {
+      const next = typeof valOrFn === "function" ? valOrFn(prev) : valOrFn;
+      saveCfg(next);
+      return next;
+    });
+  };
+
+  const setMaintenanceMode = (val) => {
+    setMaintenanceModeState(val);
+    saveMaintenance(val);
+  };
+
+  const setTipos = (valOrFn) => {
+    setTiposState(prev => {
+      const next = typeof valOrFn === "function" ? valOrFn(prev) : valOrFn;
+      saveTipos(next);
+      return next;
+    });
+  };
+
+  // ── Carregamento inicial do Firebase ────────────────────────────
+  useEffect(() => {
+    async function init() {
+      try {
+        const [cfgData, tiposData, maintenance] = await Promise.all([
+          getCfg(san(DEFAULT_CFG)),
+          getTipos(san(TIPOS_BASE)),
+          getMaintenance(),
+        ]);
+        setCfgState(cfgData);
+        setTiposState(tiposData);
+        setMaintenanceModeState(maintenance);
+
+        // Sessão local do cliente (mantida no localStorage por segurança)
+        const sessaoRaw = localStorage.getItem("fab_session");
+        if (sessaoRaw) {
+          try { setClientUser(deobfClt(JSON.parse(sessaoRaw))); } catch {}
+        }
+      } catch (e) {
+        console.error("Erro ao carregar dados do Firebase:", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    init();
+  }, []);
+
+  // ── Listeners em tempo real (pedidos e clientes) ────────────────
+  useEffect(() => {
+    const unsubOrders  = subscribeOrders(data => {
+      const normalized = data.map(o => {
+        if (!STATUS_UNICO.includes(o.status))
+          o.status = STATUS_LEGACY_MAP[o.status?.toLowerCase()] || "Aguardando Caução";
+        if (!o.checksum) o.checksum = gerarChecksumPedido(o);
+        return o;
+      });
+      setOrders(normalized);
+    });
+
+    const unsubClients = subscribeClients(data => {
+      setClients(data.map(deobfClt));
+    });
+
+    return () => {
+      unsubOrders();
+      unsubClients();
+    };
+  }, []);
+
+  // ── Persiste sessão do cliente no localStorage ──────────────────
+  useEffect(() => {
+    try {
+      if (clientUser) localStorage.setItem("fab_session", JSON.stringify(obfClt(clientUser)));
+      else            localStorage.removeItem("fab_session");
+    } catch {}
+  }, [clientUser]);
+
+  // ── Navegação ───────────────────────────────────────────────────
   const [screen, setScreen] = useState("home");
 
-  // ── Pedido em construção ──────────────────────────────────────
-  const [cart,    setCart]    = useState([]);
-  const [pedInfo, setPedInfo] = useState({ entrega: "", hora: "", obs: "", regiao: null, enderecoEntrega: "" });
-  const [editIdx, setEditIdx] = useState(null);
-  const [addingIt,setAddingIt]= useState(false);
-  const [dateErr, setDateErr] = useState("");
+  // ── Pedido em construção ────────────────────────────────────────
+  const [cart,     setCart]    = useState([]);
+  const [pedInfo,  setPedInfo] = useState({ entrega: "", hora: "", obs: "", regiao: null, enderecoEntrega: "" });
+  const [editIdx,  setEditIdx] = useState(null);
+  const [addingIt, setAddingIt]= useState(false);
+  const [dateErr,  setDateErr] = useState("");
 
-  // ── Modais ────────────────────────────────────────────────────
+  // ── Modais ──────────────────────────────────────────────────────
   const [upsellOpen, setUpsellOpen] = useState(false);
   const [labelOrd,   setLabelOrd]   = useState(null);
   const [pinDlg,     setPinDlg]     = useState(null);
   const [doneData,   setDoneData]   = useState({ caucao: 0, wppUrl: "", total: null, saldo: null });
 
-  // ── Segurança: lock admin ─────────────────────────────────────
-  const [lockedUntil, setLockedUntil] = useState(() => LS.get("fab_lockuntil") ?? 0);
+  // ── Segurança: lock admin ───────────────────────────────────────
+  const [lockedUntil, setLockedUntil] = useState(() => {
+    try { return Number(localStorage.getItem("fab_lockuntil") || 0); } catch { return 0; }
+  });
   const [lockLeft,    setLockLeft]    = useState(0);
   const loginAttempts = useRef(0);
   const lastActivity  = useRef(Date.now());
   const autoLogoutRef = useRef(null);
 
-  // ── Logo click (5→admin, 7→kernel) ───────────────────────────
-  const [clickCt,   setClickCt]   = useState(0);
+  // ── Logo click (5→admin, 7→kernel) ─────────────────────────────
+  const [clickCt,   setClickCt] = useState(0);
   const clickTimer              = useRef(null);
   const handleLogoClick = () => {
     setClickCt(p => {
@@ -72,7 +164,7 @@ export default function App() {
     clickTimer.current = setTimeout(() => setClickCt(0), 3000);
   };
 
-  // ── Totais do carrinho ────────────────────────────────────────
+  // ── Totais do carrinho ──────────────────────────────────────────
   const cartTotal        = cart.reduce((s, it) => s + (getPrecoItem(it, cfg.adicionalGourmet) ?? 0), 0);
   const isRegiaoRetirada = pedInfo.regiao?.isRetirada ?? false;
   const taxaReg          = isRegiaoRetirada ? 0 : Number(pedInfo.regiao?.taxa || 0);
@@ -80,26 +172,23 @@ export default function App() {
   const cartCaucao       = Math.ceil(cartFinal * 0.5);
   const cartSaldo        = cartFinal - cartCaucao;
 
-  // ── Persistência ─────────────────────────────────────────────
-  useEffect(() => { LS.set("fab_cfg",        cfg); },                   [cfg]);
-  useEffect(() => { LS.set("fab_orders",     orders); },                [orders]);
-  useEffect(() => { LS.set("fab_clients",    clients.map(obfClt)); },   [clients]);
-  useEffect(() => { LS.set("fab_maintenance",maintenanceMode); },       [maintenanceMode]);
-  useEffect(() => { LS.set("fab_tipos",      tipos); },                 [tipos]);
-  useEffect(() => { LS.set("fab_session",    clientUser ? obfClt(clientUser) : null); }, [clientUser]);
-
-  // ── Lock timer ────────────────────────────────────────────────
+  // ── Lock timer ──────────────────────────────────────────────────
   useEffect(() => {
     if (!lockedUntil || Date.now() >= lockedUntil) return;
     const iv = setInterval(() => {
       const left = Math.ceil((lockedUntil - Date.now()) / 1000);
       setLockLeft(Math.max(0, left));
-      if (left <= 0) { setLockedUntil(0); LS.set("fab_lockuntil", 0); loginAttempts.current = 0; clearInterval(iv); }
+      if (left <= 0) {
+        setLockedUntil(0);
+        try { localStorage.setItem("fab_lockuntil", "0"); } catch {}
+        loginAttempts.current = 0;
+        clearInterval(iv);
+      }
     }, 1000);
     return () => clearInterval(iv);
   }, [lockedUntil]);
 
-  // ── Auto-logout admin ─────────────────────────────────────────
+  // ── Auto-logout admin ───────────────────────────────────────────
   useEffect(() => {
     if (screen !== "admin") return;
     const track = () => { lastActivity.current = Date.now(); };
@@ -115,7 +204,7 @@ export default function App() {
     };
   }, [screen]);
 
-  // ── Helpers de pedido ─────────────────────────────────────────
+  // ── Helpers de pedido ───────────────────────────────────────────
   const resetPed = () => {
     setCart([]);
     setPedInfo({ entrega: "", hora: "", obs: "", regiao: null, enderecoEntrega: "" });
@@ -124,24 +213,34 @@ export default function App() {
     setDateErr("");
   };
 
-  const updateOrd = (id, patch) =>
-    setOrders(p => san(p.map(o => {
-      if (o.id !== id) return o;
-      const upd = { ...o, ...patch };
-      upd.freteManual = Number(upd.freteManual || 0);
-      const totalItens = (upd.itens ?? []).reduce((s, it) => s + (getPrecoItem(it, cfg.adicionalGourmet) ?? 0), 0);
-      const totalFinal = totalItens + Number(upd.regiao?.taxa || 0) + upd.freteManual;
-      upd.valor  = totalFinal || null;
-      upd.caucao = totalFinal ? Math.ceil(totalFinal * 0.5) : null;
-      upd.checksum = gerarChecksumPedido(upd);
-      return upd;
-    })));
+  // updateOrd: atualiza localmente e salva no Firebase
+  const updateOrd = (id, patch) => {
+    setOrders(p => {
+      const next = san(p.map(o => {
+        if (o.id !== id) return o;
+        const upd = { ...o, ...patch };
+        upd.freteManual = Number(upd.freteManual || 0);
+        const totalItens = (upd.itens ?? []).reduce((s, it) => s + (getPrecoItem(it, cfg.adicionalGourmet) ?? 0), 0);
+        const totalFinal = totalItens + Number(upd.regiao?.taxa || 0) + upd.freteManual;
+        upd.valor   = totalFinal || null;
+        upd.caucao  = totalFinal ? Math.ceil(totalFinal * 0.5) : null;
+        upd.checksum = gerarChecksumPedido(upd);
+        return upd;
+      }));
+      const updated = next.find(o => o.id === id);
+      if (updated) saveOrder(updated);
+      return next;
+    });
+  };
 
-  const removeOrd = (id) => setOrders(p => p.filter(o => o.id !== id));
+  // removeOrd: remove localmente e no Firebase
+  const removeOrd = (id) => {
+    setOrders(p => p.filter(o => o.id !== id));
+    deleteOrder(id);
+  };
 
-  // ── Confirmar pedido ──────────────────────────────────────────
+  // ── Confirmar pedido ────────────────────────────────────────────
   const confirmarPedidoFinal = (extraItems = []) => {
-    if (!LS.check()) return;
     const upsellItems = extraItems.map(u => ({ tipo: "upsell", upsellId: u.id, nome: u.nome, desc: u.desc }));
     const allCart     = [...cart, ...upsellItems];
     const totalItens  = allCart.reduce((s, it) => s + (getPrecoItem(it, cfg.adicionalGourmet) ?? 0), 0);
@@ -173,12 +272,18 @@ export default function App() {
     });
     novo.checksum = gerarChecksumPedido(novo);
 
-    setOrders(p => san([...p, novo]));
+    // Salva no Firebase (listener vai atualizar o estado automaticamente)
+    saveOrder(novo);
 
-    if (clientUser)
-      setClients(p => san(p.map(c =>
-        c.id === clientUser.id ? { ...c, historico: [...(c.historico ?? []), novo.id] } : c
-      )));
+    // Atualiza histórico do cliente
+    if (clientUser) {
+      const clienteAtualizado = {
+        ...clientUser,
+        historico: [...(clientUser.historico ?? []), novo.id],
+      };
+      setClients(p => san(p.map(c => c.id === clientUser.id ? clienteAtualizado : c)));
+      saveClient(obfClt(clienteAtualizado));
+    }
 
     if (cfg.webhookUrl)
       try { fetch(cfg.webhookUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(san(novo)) }); } catch {}
@@ -192,14 +297,22 @@ export default function App() {
     setScreen("pedido-done");
   };
 
-  // ── Modais globais ────────────────────────────────────────────
+  // ── Tela de loading ─────────────────────────────────────────────
+  if (loading) return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#FFF0F8", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontSize: 36 }}>🎂</div>
+      <div style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 800, color: "#E91E8C", fontSize: 16 }}>Carregando...</div>
+    </div>
+  );
+
+  // ── Modais globais ──────────────────────────────────────────────
   const GlobalModais = () => (<>
     {pinDlg    && <PinDlg   msg={pinDlg.msg} onOk={() => { pinDlg.onOk(); setPinDlg(null); }} onCancel={() => setPinDlg(null)} />}
     {labelOrd  && <LabelModal order={labelOrd} cfg={cfg} tipos={TIPOS} onClose={() => setLabelOrd(null)} />}
     {upsellOpen && <UpsellModal onAdd={ex => { setUpsellOpen(false); confirmarPedidoFinal(ex); }} onSkip={() => { setUpsellOpen(false); confirmarPedidoFinal([]); }} />}
   </>);
 
-  // ── Roteamento ────────────────────────────────────────────────
+  // ── Roteamento ──────────────────────────────────────────────────
   if (screen === "admin-login")
     return <AdminLoginScreen
       onLogin={() => { loginAttempts.current = 0; lastActivity.current = Date.now(); setScreen("admin"); }}
@@ -224,8 +337,8 @@ export default function App() {
       maintenanceMode={maintenanceMode}
       onSetMaintenance={setMaintenanceMode}
       onSetLicense={d => setCfg(c => san({ ...c, licenseExpiry: d }))}
-      onSetOrders={v => setOrders(san(v))}
-      onSetClients={v => setClients(san(v))}
+      onSetOrders={v => { setOrders(san(v)); saveAllOrders(san(v)); }}
+      onSetClients={v => { setClients(san(v)); saveAllClients(san(v).map(obfClt)); }}
       onSetCfg={v => setCfg(san(v))}
       onBack={() => setScreen("home")}
     />;
@@ -243,6 +356,7 @@ export default function App() {
       onSave={f => {
         const c = san({ id: Date.now(), ...f, historico: [], endereco: "" });
         setClients(p => san([...p, c]));
+        saveClient(obfClt(c));
         setClientUser(c);
         setScreen("client-area");
       }}
