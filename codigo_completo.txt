@@ -15959,3 +15959,3151 @@ export const inputStyle = {
   fontFamily:  Typography.fontBase,
   boxSizing:   "border-box",
 };
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\Badge.js ---
+
+import React from "react";
+import { STATUS_META } from "../utils/constants";
+
+export function Badge({ s }) {
+  const m = STATUS_META[s] ?? STATUS_META["Aguardando Caução"];
+  return (
+    <span style={{ 
+      background: m.bg, 
+      color: m.text, 
+      border: `1px solid ${m.brd}`, 
+      borderRadius: 20, 
+      padding: "2px 10px", 
+      fontSize: 11, 
+      fontWeight: 700, 
+      whiteSpace: "nowrap" 
+    }}>
+      {m.em} {s}
+    </span>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\Btn.js ---
+
+import React from "react";
+
+export function Btn({ ch, st, ...p }) {
+  return (
+    <button className="btn-primary" style={st} {...p}>
+      {ch}
+    </button>
+  );
+}
+
+export function BtnS({ ch, st, ...p }) {
+  return (
+    <button className="btn-secondary" style={st} {...p}>
+      {ch}
+    </button>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\BtnO.js ---
+
+import React from "react";
+
+export function BtnO({ active, ch, st, ...p }) {
+  return (
+    <button
+      className={`btn-opcao${active ? " ativo" : ""}`}
+      style={st}
+      {...p}
+    >
+      {ch}
+    </button>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\Card.js ---
+
+import React from "react";
+
+export function Card({ ch, style }) {
+  return (
+    <div className="card-branco" style={style}>
+      {ch}
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\ClientAuth.js ---
+
+import React, { useState } from "react";
+import { Fld }       from "./Fld";
+import { Btn, BtnS } from "./Btn";
+import { san, maskPh } from "../utils/helpers";
+
+export function ClientAuth({
+  mode = "login",
+  clients,
+  onLogin,
+  onRegister,
+  onSave,
+  onBack,
+}) {
+  const isLogin = mode === "login";
+
+  const [nome,        setNome]        = useState("");
+  const [tel,         setTel]         = useState("");
+  const [aniversario, setAniversario] = useState("");
+  const [err,         setErr]         = useState("");
+
+  const ok = nome.trim() && tel.trim();
+
+  const handleSubmit = () => {
+    if (!ok) return;
+
+    if (isLogin) {
+      const telDigits = tel.replace(/\D/g, "");
+      const c = (clients ?? []).find(
+        x =>
+          x.telefone.replace(/\D/g, "") === telDigits &&
+          x.nome.toLowerCase().trim()   === nome.toLowerCase().trim()
+      );
+      if (c) onLogin(c);
+      else setErr("Nome ou WhatsApp incorretos. Verifique seus dados.");
+    } else {
+      const novo = san({
+        id:          Date.now(),
+        nome:        nome.trim(),
+        telefone:    tel,
+        aniversario: aniversario || "",
+        historico:   [],
+        endereco:    "",
+      });
+      onSave(novo);
+    }
+  };
+
+  return (
+    <div className="auth-wrap">
+      <div className="auth-card fu">
+
+        {/* Ícone + título */}
+        <div style={{ textAlign: "center", marginBottom: 20 }}>
+          <div style={{ fontSize: 36 }}>{isLogin ? "🔐" : "🌸"}</div>
+          <h2 style={{ margin: "6px 0 4px", fontWeight: 900 }}>
+            {isLogin ? "Entrar" : "Criar Conta"}
+          </h2>
+          <p style={{ fontSize: 13, color: "#888", margin: 0 }}>
+            {isLogin
+              ? "Use o nome e WhatsApp do cadastro"
+              : "Preencha seus dados para fazer pedidos"}
+          </p>
+        </div>
+
+        {/* Campos comuns */}
+        <Fld label={`Nome completo${isLogin ? "" : " *"}`}>
+          <input
+            className="input-padrao"
+            value={nome}
+            onChange={e => { setNome(e.target.value); setErr(""); }}
+            placeholder="Seu nome"
+          />
+        </Fld>
+
+        <Fld label={`WhatsApp${isLogin ? "" : " *"}`}>
+          <input
+            className="input-padrao"
+            value={tel}
+            onChange={e => { setTel(maskPh(e.target.value)); setErr(""); }}
+            placeholder="(31) 99999-9999"
+          />
+        </Fld>
+
+        {/* Aniversário — só no registro */}
+        {!isLogin && (
+          <Fld label="Aniversário 🎂 (opcional)">
+            <input
+              type="date"
+              className="input-padrao"
+              value={aniversario}
+              onChange={e => setAniversario(e.target.value)}
+            />
+          </Fld>
+        )}
+
+        {/* Erro */}
+        {err && (
+          <div style={{ color: "#DC2626", fontSize: 13, marginBottom: 10 }}>
+            {err}
+          </div>
+        )}
+
+        {/* Botão principal */}
+        <Btn
+          ch={isLogin ? "Entrar" : "Criar conta"}
+          st={{ marginBottom: 8, opacity: ok ? 1 : 0.5 }}
+          disabled={!ok}
+          onClick={handleSubmit}
+        />
+
+        {/* No login: link para criar conta */}
+        {isLogin && (
+          <BtnS ch="Criar conta" st={{ marginBottom: 4 }} onClick={onRegister} />
+        )}
+
+        {/* Voltar */}
+        <button
+          onClick={onBack}
+          style={{
+            width: "100%",
+            background: "none",
+            border: "none",
+            color: "#9CA3AF",
+            marginTop: 8,
+            cursor: "pointer",
+            fontFamily: "'Nunito',sans-serif",
+          }}
+        >
+          {isLogin ? "← Voltar" : "← Já tenho conta"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\ConfigsPanel.js ---
+
+import React, { useState } from "react";
+import { Card } from "./Card";
+import { Btn }  from "./Btn";
+import { Slct } from "./Slct";
+import { Fld }  from "./Fld";
+import { san, LS } from "../utils/helpers";   // ← LS vem de helpers, não de constants
+import { TIPOS_BASE } from "../utils/constants";
+
+const fs = { width:"100%",border:"1px solid #E5D0EE",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",background:"#fff",fontFamily:"'Nunito',sans-serif",boxSizing:"border-box" };
+
+export function ConfigsPanel({ cfg, onSave, tipos, onUpdateTipos, maintenanceMode, onSetMaintenance }) {
+  const [c,          setC]          = useState(san(cfg));
+  const [saved,      setSaved]      = useState(false);
+  const [prodSelect, setProdSelect] = useState("");
+  const [uploadFile, setUploadFile] = useState(null);
+  const C = (p) => setC(x => san({ ...x, ...p }));
+
+  function save() {
+    onSave(san(c));
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  function handleUpload() {
+    if (!uploadFile || !prodSelect) return;
+    const url   = URL.createObjectURL(uploadFile);
+    const novos = (tipos || TIPOS_BASE).map(t => t.id === prodSelect ? { ...t, fotoUrl: url } : t);
+    onUpdateTipos(novos);
+    LS.set("fab_tipos", novos);
+    setUploadFile(null);
+    setProdSelect("");
+  }
+
+  return (
+    <div>
+      <h3 style={{ fontSize: 17, fontWeight: 900, marginBottom: 14 }}>⚙️ Configurações</h3>
+
+      {/* Manutenção */}
+      <Card ch={<>
+        <div style={{ fontWeight: 800, marginBottom: 8 }}>🔧 Modo Manutenção</div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            onClick={() => onSetMaintenance(true)}
+            style={{ flex: 1, background: maintenanceMode?"#DC2626":"#fff", color: maintenanceMode?"#fff":"#DC2626", border: "1.5px solid #DC2626", borderRadius: 10, padding: 10, fontWeight: 700, cursor: "pointer" }}
+          >Ativar</button>
+          <button
+            onClick={() => onSetMaintenance(false)}
+            style={{ flex: 1, background: !maintenanceMode?"#15803D":"#fff", color: !maintenanceMode?"#fff":"#15803D", border: "1.5px solid #15803D", borderRadius: 10, padding: 10, fontWeight: 700, cursor: "pointer" }}
+          >Desativar</button>
+        </div>
+        <div style={{ fontSize: 12, color: maintenanceMode?"#DC2626":"#15803D", marginTop: 8, fontWeight: 700 }}>
+          {maintenanceMode ? "🔴 Loja fechada para pedidos" : "🟢 Loja aberta"}
+        </div>
+      </>} />
+
+      {/* Prazo mínimo */}
+      <Card ch={<>
+        <div style={{ fontWeight: 800, marginBottom: 8 }}>⏰ Prazo Mínimo</div>
+        <Fld label="Horas mínimas para encomenda">
+          <input type="number" value={c.prazoMinHoras} onChange={e => C({ prazoMinHoras: Number(e.target.value) })} style={fs} />
+        </Fld>
+      </>} />
+
+      {/* Adicional gourmet */}
+      <Card ch={<>
+        <div style={{ fontWeight: 800, marginBottom: 8 }}>⭐ Adicional Gourmet (R$)</div>
+        <input type="number" value={c.adicionalGourmet} onChange={e => C({ adicionalGourmet: Number(e.target.value) })} style={fs} />
+      </>} />
+
+      {/* Upload de foto de produto */}
+      <Card ch={<>
+        <div style={{ fontWeight: 800, marginBottom: 10 }}>🖼️ Upload de Foto do Produto</div>
+        <Slct
+          label="Produto"
+          value={prodSelect}
+          onChange={e => setProdSelect(e.target.value)}
+          options={<>
+            <option value="">Selecione</option>
+            {(tipos || TIPOS_BASE).map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
+          </>}
+        />
+        <Fld label="Imagem (PNG / JPG)">
+          <input type="file" accept="image/*" onChange={e => setUploadFile(e.target.files?.[0] || null)} style={fs} />
+        </Fld>
+        <Btn ch="Fazer Upload" st={{ marginBottom: 8 }} onClick={handleUpload} disabled={!uploadFile || !prodSelect} />
+        {(tipos || TIPOS_BASE).find(t => t.id === prodSelect)?.fotoUrl && (
+          <img src={(tipos || TIPOS_BASE).find(t => t.id === prodSelect)?.fotoUrl} style={{ width: 60, height: 40, objectFit: "cover", borderRadius: 8 }} alt="" onError={e => { e.target.style.display = "none"; }} />
+        )}
+        <div style={{ fontSize: 10, color: "#888", marginTop: 6 }}>⚠️ Fotos são temporárias (sessão). Use URLs externas para persistência.</div>
+      </>} />
+
+      <Btn ch={saved ? "✅ Salvo!" : "💾 Salvar Configurações"} st={{ background: saved ? "#15803D" : undefined }} onClick={save} />
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\Fld.js ---
+
+import React from "react";
+
+/**
+ * Fld – campo de formulário genérico.
+ * Se nenhum filho for fornecido, renderiza um <input> com todas as
+ * props restantes (value, onChange, type, placeholder, etc.).
+ */
+export function Fld({ label, children, ...p }) {
+  return (
+    <div style={{ marginBottom: 12 }}>
+      {label && (
+        <label className="fld-label">{label}</label>
+      )}
+      {children ?? <input className="input-padrao" {...p} />}
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\Hdr.js ---
+
+import React from "react";
+import { pk, pkL } from "../utils/constants";
+
+export function Hdr({ title, onBack, right }) {
+  return (
+    <div
+      className="no-print"
+      style={{
+        background: "#fff",
+        borderBottom: `2px solid ${pkL}`,
+        padding: "12px 16px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        position: "sticky",
+        top: 0,
+        zIndex: 30,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <button
+          onClick={onBack}
+          style={{ border: "none", background: "none", fontSize: 22, cursor: "pointer", color: pk, padding: 0 }}
+        >
+          ←
+        </button>
+        <span style={{ fontWeight: 900, fontSize: 16, color: pk }}>{title}</span>
+      </div>
+      {right ?? <div />}
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\ItemBuilder.js ---
+
+import React, { useState } from "react";
+import { Fld } from "./Fld";
+import { Slct } from "./Slct";
+import { Btn, BtnS } from "./Btn";
+import { BtnO } from "./BtnO";
+import { Card } from "./Card";
+import { san, fmtR, calcItem } from "../utils/helpers";
+import { TIPOS_BASE, PRECOS, MASSAS, R_TRAD, R_GOUR, R_BENTO_T, R_BENTO_G, S_DOC_T, S_DOC_G } from "../utils/constants";
+
+const EMPTY_IT = { tipo:"",formato:"redondo",fatias:"",subtipo:"tradicional",quantidade:"50",massa:"Baunilha",recheio1:"",recheio2:"",bentoTipo:"tradicional",obs:"" };
+
+export function ItemBuilder({ init, onSave, onCancel, isEdit, gAdic = 0, tipos }) {
+  const pk = "#E91E8C";
+  const pkL = "#FFF0F8";
+  const T = (tipos && tipos.length) ? tipos : TIPOS_BASE;
+  const [f, setF] = useState(san(init ?? EMPTY_IT));
+  const F = (p) => setF(x => san({ ...x, ...p }));
+  
+  const isBento = f.tipo === "bento", isDoc = f.tipo === "docinhos", isGr = f.tipo && !isBento && !isDoc;
+  const temRet = ["chantilly","palitinhos"].includes(f.tipo);
+  const tams = isGr ? Object.entries(PRECOS[f.tipo]?.[f.formato] ?? {}).map(([k, v]) => ({ k, v })) : [];
+  const rT = isBento ? R_BENTO_T : R_TRAD;
+  const rG = isBento ? R_BENTO_G : R_GOUR;
+  const preco = calcItem(f, gAdic);
+  const ok = f.tipo && (isBento ? f.recheio1 : isDoc ? (f.quantidade && f.recheio1) : (f.fatias && f.massa && f.recheio1));
+
+  return (
+    <Card style={{ border:`2px solid ${pkL}` }} ch={
+      <div>
+        <div style={{ marginBottom:12 }}>
+          <label style={{ fontSize:13,fontWeight:700,color:"#6B4C7A",marginBottom:6,display:"block" }}>Tipo *</label>
+          {T.map(t => (
+            <div key={t.id} className="hov" style={{ border:`2px solid ${f.tipo===t.id?pk:"#E5D0EE"}`,borderRadius:12,padding:"9px 13px",cursor:"pointer",background:f.tipo===t.id?pkL:"#fff",marginBottom:6 }} onClick={() => F({ tipo:t.id,fatias:"",formato:"redondo",recheio1:"",recheio2:"" })}>
+              {t.fotoUrl
+                ? <img src={t.fotoUrl} style={{ width:"100%",height:80,objectFit:"cover",borderRadius:8,marginBottom:6 }} alt={t.nome} onError={e => { e.target.style.display="none"; }} />
+                : <div style={{ width:"100%",height:60,background:"#F3E6F0",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#888" }}>📷 sem foto</div>
+              }
+              <div style={{ fontWeight:800,fontSize:14,color:f.tipo===t.id?pk:"#1A1A1A" }}>{t.nome}</div>
+              <div style={{ fontSize:12,color:"#888" }}>{t.desc}</div>
+            </div>
+          ))}
+        </div>
+        
+        {isDoc && <>
+          <div style={{ marginBottom:12 }}>
+            <label style={{ fontSize:13,fontWeight:700 }}>Categoria *</label>
+            <div style={{ display:"flex",gap:8 }}>
+              {["tradicional","gourmet"].map(v => <BtnO key={v} active={f.subtipo===v} ch={v.charAt(0).toUpperCase()+v.slice(1)} st={{ flex:1 }} onClick={() => F({ subtipo:v,recheio1:"" })} />)}
+            </div>
+          </div>
+          <div style={{ marginBottom:12 }}>
+            <label style={{ fontSize:13,fontWeight:700 }}>Quantidade *</label>
+            <div style={{ display:"flex",gap:8 }}>
+              {["50","100"].map(v => <BtnO key={v} active={f.quantidade===v} ch={`${v} un · ${fmtR(PRECOS.docinhos[f.subtipo]?.[Number(v)] || 0)}`} st={{ flex:1 }} onClick={() => F({ quantidade:v })} />)}
+            </div>
+          </div>
+          <Slct label="Sabor *" value={f.recheio1} onChange={e => F({ recheio1:e.target.value })} options={<><option value="">Escolha</option>{(f.subtipo==="gourmet"?S_DOC_G:S_DOC_T).map(r => <option key={r} value={r}>{r}</option>)}</>} />
+        </>}
+        
+        {isBento && <>
+          <div style={{ marginBottom:12 }}>
+            <label style={{ fontSize:13,fontWeight:700 }}>Tipo *</label>
+            <div style={{ display:"flex",gap:8 }}>
+              {[{v:"tradicional",p:50},{v:"gourmet",p:55}].map(({v,p}) => <BtnO key={v} active={f.bentoTipo===v} ch={`${v.charAt(0).toUpperCase()+v.slice(1)} · ${fmtR(p)}`} st={{ flex:1 }} onClick={() => F({ bentoTipo:v,recheio1:"" })} />)}
+            </div>
+          </div>
+          <Slct label="Recheio *" value={f.recheio1} onChange={e => F({ recheio1:e.target.value })} options={<><option value="">Escolha</option>{(f.bentoTipo==="gourmet"?R_BENTO_G:R_BENTO_T).map(r => <option key={r} value={r}>{r}</option>)}</>} />
+        </>}
+        
+        {isGr && <>
+          {temRet && (
+            <div style={{ marginBottom:12 }}>
+              <label style={{ fontSize:13,fontWeight:700 }}>Formato *</label>
+              <div style={{ display:"flex",gap:8 }}>
+                {["redondo","retangular"].map(v => <BtnO key={v} active={f.formato===v} ch={v.charAt(0).toUpperCase()+v.slice(1)} st={{ flex:1 }} onClick={() => F({ formato:v,fatias:"" })} />)}
+              </div>
+            </div>
+          )}
+          <div style={{ marginBottom:12 }}>
+            <label style={{ fontSize:13,fontWeight:700 }}>Tamanho *</label>
+            <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:8 }}>
+              {tams.map(({k,v}) => (
+                <div key={k} style={{ border:`2px solid ${f.fatias===k?pk:"#E5D0EE"}`,borderRadius:12,padding:"9px 12px",cursor:"pointer",background:f.fatias===k?pkL:"#fff" }} onClick={() => F({ fatias:k })}>
+                  <div style={{ fontWeight:800 }}>{k} fatias</div>
+                  <div style={{ fontSize:13,color:pk,fontWeight:700 }}>{fmtR(v)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{ marginBottom:12 }}>
+            <label style={{ fontSize:13,fontWeight:700 }}>Massa *</label>
+            <div style={{ display:"flex",gap:8 }}>
+              {MASSAS.map(m => <BtnO key={m} active={f.massa===m} ch={m} st={{ flex:1 }} onClick={() => F({ massa:m })} />)}
+            </div>
+          </div>
+          <Slct label="1º Recheio *" value={f.recheio1} onChange={e => F({ recheio1:e.target.value })} options={<><option value="">Escolha</option><optgroup label="── Tradicionais">{rT.map(r => <option key={r} value={r}>{r}</option>)}</optgroup><optgroup label="── Gourmet ⭐">{rG.map(r => <option key={r} value={r}>{r}</option>)}</optgroup></>} />
+          <Slct label="2º Recheio (opcional)" value={f.recheio2} onChange={e => F({ recheio2:e.target.value })} options={<><option value="">Nenhum</option><optgroup label="── Tradicionais">{rT.map(r => <option key={r} value={r}>{r}</option>)}</optgroup><optgroup label="── Gourmet ⭐">{rG.map(r => <option key={r} value={r}>{r}</option>)}</optgroup></>} />
+        </>}
+        
+        {f.tipo && (
+          <Fld label="Obs. deste item">
+            <input value={f.obs} onChange={e => F({ obs:e.target.value })} style={{ width:"100%",border:"1px solid #E5D0EE",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",background:"#fff",fontFamily:"'Nunito',sans-serif",boxSizing:"border-box" }} />
+          </Fld>
+        )}
+        
+        {preco != null && <div style={{ background:pkL,borderRadius:10,padding:"8px 14px",marginBottom:12,fontWeight:800,color:pk }}>💰 {fmtR(preco)}</div>}
+        
+        <div style={{ display:"flex",gap:8 }}>
+          <BtnS ch="Cancelar" st={{ flex:1 }} onClick={onCancel} />
+          <Btn ch={isEdit ? "💾 Salvar" : "✅ Adicionar"} st={{ flex:2,opacity:ok?1:.5 }} disabled={!ok} onClick={() => ok && onSave(san(f))} />
+        </div>
+      </div>
+    } />
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\LabelModal.js ---
+
+import React from "react";
+import { BtnS }        from "./Btn";
+import { Badge }       from "./Badge";
+import { StatusBar }   from "./StatusBar";
+import { fmtR, fmtDt, getPrecoItem } from "../utils/helpers";
+import { TIPOS_BASE, pk, NOME_APP, PIX_KEY } from "../utils/constants";
+
+export function LabelModal({ order, cfg, tipos, onClose }) {
+  const TIPOS_REF = (tipos && tipos.length) ? tipos : TIPOS_BASE;
+  const ts        = new Date().toLocaleString("pt-BR");
+  const saldo     = (order.valor || 0) - (order.caucao || 0);
+  const isRetirada= order.regiao?.isRetirada ?? false;
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.55)", zIndex: 180, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} className="no-print">
+      <div style={{ background: "#fff", borderRadius: 16, padding: 24, width: "100%", maxWidth: 400, maxHeight: "90vh", overflowY: "auto" }}>
+
+        {/* Conteúdo imprimível */}
+        <div style={{ fontFamily: "monospace", fontSize: 13, lineHeight: 1.8, color: "#000" }}>
+          <div style={{ textAlign: "center", borderBottom: "2px dashed #333", paddingBottom: 10, marginBottom: 10 }}>
+            <div style={{ fontSize: 17, fontWeight: 900 }}>🎂 {(NOME_APP || "Fabiana Bolos").toUpperCase()}</div>
+            <div style={{ fontSize: 11, color: "#555" }}>{ts}</div>
+          </div>
+
+          <div><b>CLIENTE:</b> {order.nome}</div>
+          <div><b>FONE:</b> {order.telefone || "—"}</div>
+
+          {isRetirada
+            ? <div style={{ fontWeight: 900, color: pk, marginTop: 4 }}>📍 RETIRADA NA LOJA</div>
+            : <>
+                <div><b>ENDEREÇO:</b> {order.endereco || "—"}</div>
+                {order.freteManual > 0 && <div><b>FRETE:</b> {fmtR(order.freteManual)}</div>}
+              </>
+          }
+
+          <div><b>ENTREGA:</b> {fmtDt(order.entrega)}{order.hora ? ` às ${order.hora}` : ""}</div>
+
+          <div style={{ marginTop: 6 }}>
+            <StatusBar status={order.status || "Aguardando Caução"} />
+          </div>
+          <div style={{ marginTop: 4 }}>
+            <Badge s={order.status || "Aguardando Caução"} />
+          </div>
+
+          {/* Itens */}
+          <div style={{ borderTop: "1px dashed #aaa", marginTop: 8, paddingTop: 8 }}>
+            <b>ITENS:</b>
+            {(order.itens || []).map((it, i) => {
+              const isU = it.tipo === "upsell";
+              const tn  = isU ? it.nome : (TIPOS_REF.find(t => t.id === it.tipo)?.nome ?? it.tipo ?? "");
+              const p   = getPrecoItem(it, cfg?.adicionalGourmet ?? 0);
+              return (
+                <div key={i} style={{ marginTop: 6, paddingLeft: 6, borderLeft: `3px solid ${pk}` }}>
+                  <div style={{ fontWeight: 700 }}>{i + 1}. {tn}</div>
+                  {!isU && it.massa    && <div style={{ fontSize: 11, color: "#555" }}>Massa: {it.massa}</div>}
+                  {!isU && it.recheio1 && <div style={{ fontSize: 11, color: "#555" }}>R1: {it.recheio1}</div>}
+                  {!isU && it.recheio2 && <div style={{ fontSize: 11, color: "#555" }}>R2: {it.recheio2}</div>}
+                  {!isU && it.fatias   && <div style={{ fontSize: 11, color: "#555" }}>{it.fatias} fatias · {it.formato}</div>}
+                  {!isU && it.obs      && <div style={{ fontSize: 11, color: "#888" }}>Obs: {it.obs}</div>}
+                  {p != null && <div style={{ fontWeight: 700, color: pk }}>{fmtR(p)}</div>}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Resumo financeiro */}
+          <div style={{ borderTop: "2px dashed #333", marginTop: 8, paddingTop: 8, background: "#f9f9f9", padding: 8, borderRadius: 4 }}>
+            <div style={{ fontWeight: 900, fontSize: 14 }}>💰 RESUMO FINANCEIRO</div>
+            <div><b>TOTAL:</b> {order.valor ? fmtR(order.valor) : "Sob consulta"}</div>
+            <div><b>SINAL (50%):</b> {order.caucao ? fmtR(order.caucao) : "—"}</div>
+            {saldo > 0 && <div style={{ fontWeight: 900, fontSize: 14, marginTop: 4 }}><b>SALDO: {fmtR(saldo)}</b></div>}
+            {PIX_KEY && <div style={{ marginTop: 4, fontSize: 11 }}>PIX: <b>{PIX_KEY}</b></div>}
+          </div>
+
+          {order.checksum && (
+            <div style={{ fontSize: 10, color: "#aaa", fontFamily: "monospace", marginTop: 6 }}>#{order.checksum}</div>
+          )}
+        </div>
+
+        {/* Botões (não imprimem) */}
+        <div style={{ display: "flex", gap: 8, marginTop: 16 }} className="no-print">
+          <button
+            onClick={() => window.print()}
+            style={{ flex: 1, background: pk, color: "#fff", border: "none", borderRadius: 10, padding: 11, fontWeight: 700, cursor: "pointer" }}
+          >
+            🖨️ Imprimir
+          </button>
+          <BtnS ch="Fechar" st={{ flex: 1 }} onClick={onClose} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\PageWrapper.js ---
+
+import React from "react";
+
+export function PageWrapper({ children, style }) {
+  return (
+    <div className="page-base" style={style}>
+      {children}
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\PinDlg.js ---
+
+import React, { useState } from "react";
+import { Btn, BtnS } from "./Btn";
+import { PIN_MASTER } from "../utils/constants";
+
+const fs = { width:"100%",border:"1px solid #E5D0EE",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",background:"#fff",fontFamily:"'Nunito',sans-serif",boxSizing:"border-box" };
+
+export function PinDlg({ msg, onOk, onCancel }) {
+  const [v,   setV]   = useState("");
+  const [err, setErr] = useState(false);
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} className="no-print">
+      <div style={{ background: "#fff", borderRadius: 20, padding: 24, width: "100%", maxWidth: 300, fontFamily: "'Nunito',sans-serif" }}>
+        <div style={{ textAlign: "center", marginBottom: 16 }}>
+          <div style={{ fontSize: 32 }}>🔐</div>
+          <h3 style={{ margin: "6px 0 4px", fontWeight: 900 }}>Confirmar</h3>
+          <p style={{ fontSize: 13, color: "#888", margin: 0 }}>{msg}</p>
+        </div>
+        <input
+          type="password"
+          placeholder="PIN"
+          value={v}
+          onChange={e => { setV(e.target.value); setErr(false); }}
+          style={{ ...fs, marginBottom: 6 }}
+          autoFocus
+        />
+        {err && <p style={{ color: "#DC2626", fontSize: 13, margin: "0 0 8px", fontWeight: 600 }}>PIN incorreto</p>}
+        <div style={{ display: "flex", gap: 8 }}>
+          <BtnS ch="Cancelar" st={{ flex: 1 }} onClick={onCancel} />
+          <Btn  ch="OK"       st={{ flex: 1 }} onClick={() => { if (v === PIN_MASTER) onOk(); else setErr(true); }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\Slct.js ---
+
+import React from "react";
+
+export function Slct({ label, value, onChange, options }) {
+  return (
+    <div style={{ marginBottom: 12 }}>
+      {label && <label className="fld-label">{label}</label>}
+      <select value={value} onChange={onChange} className="input-padrao">
+        {options}
+      </select>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\StatusBar.js ---
+
+import React from "react";
+import { STATUS_UNICO, pk } from "../utils/constants";
+
+export function StatusBar({ status }) {
+  const idx = STATUS_UNICO.indexOf(status);
+  
+  return (
+    <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
+      {STATUS_UNICO.filter(s => s !== "Cancelado").map((s, i) => (
+        <div 
+          key={i} 
+          style={{ 
+            flex: 1, 
+            height: 6, 
+            borderRadius: 3, 
+            background: i === idx ? pk : (i < idx ? "#15803D" : "#E5D0EE") 
+          }} 
+        />
+      ))}
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\components\UpsellModal.js ---
+
+import React, { useState } from "react";
+import { Btn, BtnS } from "./Btn";
+import { UPSELL, pk, pkL } from "../utils/constants";
+import { fmtR } from "../utils/helpers";
+
+export function UpsellModal({ onAdd, onSkip }) {
+  const [sel, setSel] = useState([]);
+  const toggle = (id) => setSel(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
+  const total = sel.reduce((s, id) => s + (UPSELL.find(u => u.id === id)?.preco || 0), 0);
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 150, display: "flex", alignItems: "flex-end", justifyContent: "center" }} className="no-print">
+      <div className="fu" style={{ background: "#fff", borderRadius: "20px 20px 0 0", padding: 24, width: "100%", maxWidth: 500, maxHeight: "85vh", overflowY: "auto" }}>
+        <div style={{ textAlign: "center", marginBottom: 16 }}>
+          <div style={{ fontSize: 28 }}>✨</div>
+          <h3 style={{ fontWeight: 900, fontSize: 18 }}>Que tal adicionar?</h3>
+        </div>
+        
+        {UPSELL.map(u => (
+          <div 
+            key={u.id} 
+            onClick={() => toggle(u.id)} 
+            style={{ 
+              display: "flex", 
+              justifyContent: "space-between", 
+              border: `2px solid ${sel.includes(u.id) ? pk : "#E5D0EE"}`, 
+              borderRadius: 12, 
+              padding: "11px 14px", 
+              marginBottom: 8, 
+              cursor: "pointer", 
+              background: sel.includes(u.id) ? pkL : "#fff" 
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: 800 }}>{u.nome}</div>
+              <div style={{ fontSize: 12, color: "#888" }}>{u.desc}</div>
+            </div>
+            <div style={{ fontWeight: 900, color: pk }}>+{fmtR(u.preco)}</div>
+          </div>
+        ))}
+        
+        {sel.length > 0 && (
+          <div style={{ background: pkL, borderRadius: 10, padding: "8px 14px", marginBottom: 12, fontWeight: 800, color: pk }}>
+            Adicional: +{fmtR(total)}
+          </div>
+        )}
+        
+        <Btn 
+          ch={sel.length > 0 ? "✅ Adicionar e confirmar →" : "Confirmar sem adicionais →"} 
+          onClick={() => onAdd(UPSELL.filter(u => sel.includes(u.id)))} 
+        />
+        <BtnS ch="Pular" st={{ marginTop: 8 }} onClick={onSkip} />
+      </div>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\hooks\useCart.js ---
+
+// src/hooks/useCart.js
+import { useState } from "react";
+import { getPrecoItem } from "../utils/helpers";
+
+export function useCart(adicionalGourmet = 0) {
+  const [cart,    setCart]    = useState([]);
+  const [editIdx, setEditIdx] = useState(null);
+  const [addingIt,setAddingIt]= useState(false);
+
+  const cartTotal  = cart.reduce((s, it) => s + (getPrecoItem(it, adicionalGourmet) ?? 0), 0);
+
+  const calcTotals = (taxa = 0) => {
+    const cartFinal  = cartTotal + taxa;
+    const cartCaucao = Math.ceil(cartFinal * 0.5);
+    const cartSaldo  = cartFinal - cartCaucao;
+    return { cartFinal, cartCaucao, cartSaldo };
+  };
+
+  const addItem = (item) => setCart(p => [...p, item]);
+
+  const updateItem = (idx, item) =>
+    setCart(p => p.map((it, i) => i === idx ? item : it));
+
+  const removeItem = (idx) =>
+    setCart(p => p.filter((_, i) => i !== idx));
+
+  const resetCart = () => {
+    setCart([]);
+    setEditIdx(null);
+    setAddingIt(false);
+  };
+
+  return {
+    cart, setCart,
+    editIdx, setEditIdx,
+    addingIt, setAddingIt,
+    cartTotal, calcTotals,
+    addItem, updateItem, removeItem, resetCart,
+  };
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\hooks\useClients.js ---
+
+// src/hooks/useClients.js
+import { useState } from "react";
+import { LS, san, obfClt, deobfClt } from "../utils/helpers";
+
+export function useClients() {
+  const [clients, setClientsState] = useState(() =>
+    (LS.get("fab_clients") ?? []).map(deobfClt)
+  );
+
+  const persist = (next) => {
+    setClientsState(next);
+    LS.set("fab_clients", next.map(obfClt));
+  };
+
+  /**
+   * Adiciona um cliente novo.
+   * Se já existir um pré-cadastro com o mesmo telefone (isPreRegistered),
+   * mescla os dados, remove a flag e ativa a conta, preservando o histórico.
+   */
+  const addClient = (dados) => {
+    const telDigits = (dados.telefone ?? "").replace(/\D/g, "");
+    const existente = clients.find(
+      (c) => (c.telefone ?? "").replace(/\D/g, "") === telDigits
+    );
+
+    if (existente) {
+      const merged = san({
+        ...existente,
+        ...dados,
+        id:              existente.id,
+        historico:       existente.historico ?? [],
+        isPreRegistered: false,
+      });
+      const next = clients.map((c) => (c.id === existente.id ? merged : c));
+      persist(next);
+      return merged;
+    }
+
+    const novo = san({
+      id:          Date.now(),
+      historico:   [],
+      endereco:    "",
+      ...dados,
+    });
+    persist([...clients, novo]);
+    return novo;
+  };
+
+  /**
+   * Cria um pré-cadastro pelo Admin.
+   * isPreRegistered: true indica que o cliente ainda precisa completar o perfil.
+   */
+  const preRegisterClient = (nome, telefone) => {
+    const telDigits = telefone.replace(/\D/g, "");
+    const existente = clients.find(
+      (c) => (c.telefone ?? "").replace(/\D/g, "") === telDigits
+    );
+    if (existente) return existente;
+
+    const novo = san({
+      id:              Date.now(),
+      nome,
+      telefone,
+      aniversario:     "",
+      historico:       [],
+      endereco:        "",
+      isPreRegistered: true,
+    });
+    persist([...clients, novo]);
+    return novo;
+  };
+
+  const updateClient = (id, patch) => {
+    const next = clients.map((c) =>
+      c.id === id ? san({ ...c, ...patch }) : c
+    );
+    persist(next);
+    return next.find((c) => c.id === id);
+  };
+
+  const setClients = (v) => persist(san(v));
+
+  return {
+    clients,
+    addClient,
+    preRegisterClient,
+    updateClient,
+    setClients,
+  };
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\hooks\useOrders.js ---
+
+// src/hooks/useOrders.js
+import { useState } from "react";
+import { LS, san, getPrecoItem, gerarChecksumPedido } from "../utils/helpers";
+import { STATUS_UNICO, STATUS_LEGACY_MAP } from "../utils/constants";
+
+function normalizeOrder(o) {
+  if (!STATUS_UNICO.includes(o.status))
+    o.status = STATUS_LEGACY_MAP[o.status?.toLowerCase()] || "Aguardando Caução";
+  if (!o.checksum) o.checksum = gerarChecksumPedido(o);
+  return o;
+}
+
+export function useOrders(adicionalGourmet = 0) {
+  const [orders, setOrdersState] = useState(() =>
+    (LS.get("fab_orders") ?? []).map(normalizeOrder)
+  );
+
+  const persist = (next) => {
+    setOrdersState(next);
+    LS.set("fab_orders", next);
+  };
+
+  const addOrder = (novo) => {
+    persist(san([...orders, novo]));
+  };
+
+  const updateOrd = (id, patch) => {
+    const next = san(
+      orders.map((o) => {
+        if (o.id !== id) return o;
+        const upd = { ...o, ...patch };
+        upd.freteManual = Number(upd.freteManual || 0);
+        const totalItens = (upd.itens ?? []).reduce(
+          (s, it) => s + (getPrecoItem(it, adicionalGourmet) ?? 0),
+          0
+        );
+        const totalFinal = totalItens + Number(upd.regiao?.taxa || 0) + upd.freteManual;
+        upd.valor    = totalFinal || null;
+        upd.caucao   = totalFinal ? Math.ceil(totalFinal * 0.5) : null;
+        upd.checksum = gerarChecksumPedido(upd);
+        return upd;
+      })
+    );
+    persist(next);
+  };
+
+  const removeOrd = (id) => persist(orders.filter((o) => o.id !== id));
+
+  const setOrders = (v) => persist(san(v));
+
+  return { orders, addOrder, updateOrd, removeOrd, setOrders };
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\hooks\useSettings.js ---
+
+// src/hooks/useSettings.js
+import { useState } from "react";
+import { LS, san } from "../utils/helpers";
+import { DEFAULT_CFG, TIPOS_BASE } from "../utils/constants";
+
+const DEFAULT_WPP_MSG =
+  "Olá, {NOME}! 🎂\nSeu pedido foi confirmado!\n" +
+  "📅 Entrega: {DATA_ENTREGA}\n" +
+  "💰 Total: {TOTAL}\n" +
+  "💳 Caução (50%): {CAUCAO}\n" +
+  "📌 SALDO A COBRAR: {SALDO}";
+
+export function useSettings() {
+  const [cfg, setCfgState] = useState(() => {
+    const saved = LS.get("fab_cfg") ?? san(DEFAULT_CFG);
+    // garante campos novos para migrações de versões anteriores
+    return {
+      pixLink:    "",
+      cardLink:   "",
+      wppMsg:     DEFAULT_WPP_MSG,
+      ...saved,
+    };
+  });
+
+  const [maintenanceMode, setMaintenanceModeState] = useState(
+    () => LS.get("fab_maintenance") ?? false
+  );
+
+  const [tipos, setTiposState] = useState(
+    () => LS.get("fab_tipos") ?? san(TIPOS_BASE)
+  );
+
+  const setCfg = (next) => {
+    const v = typeof next === "function" ? next(cfg) : next;
+    setCfgState(v);
+    LS.set("fab_cfg", v);
+  };
+
+  const setMaintenanceMode = (v) => {
+    setMaintenanceModeState(v);
+    LS.set("fab_maintenance", v);
+  };
+
+  const setTipos = (next) => {
+    const v = typeof next === "function" ? next(tipos) : next;
+    setTiposState(v);
+    LS.set("fab_tipos", v);
+  };
+
+  /**
+   * Gera a mensagem de WhatsApp substituindo variáveis dinâmicas.
+   */
+  const buildWppMsg = ({ nome, total, caucao, saldo, dataEntrega }) => {
+    const template = cfg.wppMsg || DEFAULT_WPP_MSG;
+    const fmtR = (v) => `R$ ${Number(v).toFixed(2).replace(".", ",")}`;
+    return template
+      .replace(/{NOME}/g,          nome        || "")
+      .replace(/{TOTAL}/g,         fmtR(total  || 0))
+      .replace(/{CAUCAO}/g,        fmtR(caucao || 0))
+      .replace(/{SALDO}/g,         fmtR(saldo  || 0))
+      .replace(/{DATA_ENTREGA}/g,  dataEntrega || "");
+  };
+
+  return {
+    cfg,        setCfg,
+    maintenanceMode, setMaintenanceMode,
+    tipos,      setTipos,
+    buildWppMsg,
+  };
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\screens\AdminLogin.js ---
+
+import React, { useState } from "react";
+import { Fld } from "../components/Fld";
+import { Btn } from "../components/Btn";
+import { ADMIN_PASS, PIN_MASTER, pkL } from "../utils/constants";
+
+export function AdminLoginScreen({ onLogin, onBack, lockedUntil, lockLeft }) {
+  const [pass, setPass] = useState("");
+  const [pin, setPin] = useState("");
+  const [err, setErr] = useState(false);
+  const locked = Date.now() < lockedUntil;
+
+  return (
+    <div style={{ background: `linear-gradient(160deg, ${pkL}, #FDF6FB)`, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <div className="fu" style={{ background: "#fff", borderRadius: 20, padding: 26, width: "100%", maxWidth: 340 }}>
+        <h2 style={{ textAlign: "center" }}>🔐 Acesso Admin</h2>
+        {locked ? (
+          <div style={{ textAlign: "center", padding: 20 }}>🔒 Bloqueado: tente em {lockLeft}s</div>
+        ) : (
+          <>
+            <Fld label="Senha">
+              <input type="password" value={pass} onChange={e => { setPass(e.target.value); setErr(false); }} style={{ width: "100%", padding: "10px", borderRadius: 10, border: "1px solid #E5D0EE" }} />
+            </Fld>
+            <Fld label="PIN">
+              <input type="password" value={pin} onChange={e => { setPin(e.target.value); setErr(false); }} style={{ width: "100%", padding: "10px", borderRadius: 10, border: "1px solid #E5D0EE" }} />
+            </Fld>
+            {err && <div style={{ color: "#DC2626", marginBottom: 10, fontSize: 13 }}>Credenciais inválidas</div>}
+            <Btn ch="Acessar Painel" onClick={() => { if (pass === ADMIN_PASS && pin === PIN_MASTER) onLogin(); else setErr(true); }} />
+          </>
+        )}
+        <button onClick={onBack} style={{ width: "100%", background: "none", border: "none", color: "#9CA3AF", marginTop: 12, cursor: "pointer" }}>← Voltar</button>
+      </div>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\screens\AdminPanel.js ---
+
+import React, { useState } from "react";
+import { Hdr }       from "../components/Hdr";
+import { Card }      from "../components/Card";
+import { Fld }       from "../components/Fld";
+import { Btn, BtnS } from "../components/Btn";
+import { Badge }     from "../components/Badge";
+import { StatusBar } from "../components/StatusBar";
+import { ConfigsPanel } from "../components/ConfigsPanel";
+import { fmtDt, fmtR, isSinalPago, san, getPrecoItem, today } from "../utils/helpers";
+import { STATUS_UNICO, STATUS_META, pk, pkL, WHATSAPP } from "../utils/constants";
+
+export function AdminPanel({
+  orders, setOrders, updateOrd, removeOrd,
+  cfg, setCfg, tipos, setTipos, TIPOS,
+  clients, maintenanceMode, setMaintenanceMode,
+  setPinDlg, setLabelOrd, onBack,
+}) {
+  const [selOrdId, setSelOrdId] = useState(null);
+  const [adminTab, setAdminTab] = useState("hoje");
+  const [adminSrch,setAdminSrch]= useState("");
+  const [adminFlt, setAdminFlt] = useState("todos");
+  const [showClts, setShowClts] = useState(false);
+
+  const hoy      = today();
+  const selOrd   = orders.find(o => o.id === selOrdId);
+
+  // Listas
+  const todayOrds = orders.filter(o => o.entrega === hoy).sort((a, b) => (a.hora||"").localeCompare(b.hora||""));
+  const urgentes  = orders.filter(o => o.entrega <= hoy && o.status !== "Finalizado" && o.status !== "Cancelado").length;
+  const semOrds   = orders.filter(o => {
+    const d = new Date(o.entrega); const n = new Date(); n.setHours(0,0,0,0);
+    const f = new Date(n); f.setDate(f.getDate()+7);
+    return d >= n && d <= f && o.status !== "Cancelado";
+  });
+
+  // Stats mês
+  const now  = new Date();
+  const ordsMes = orders.filter(o => {
+    const d = new Date(o.entrega);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+      && o.status !== "Cancelado" && o.status !== "Aguardando Caução";
+  });
+  const totalMes = ordsMes.reduce((s, o) => s + Number(o.valor||0), 0);
+  const totalFin = orders.filter(o => {
+    const d = new Date(o.entrega);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && o.status === "Finalizado";
+  }).reduce((s, o) => s + Number(o.valor||0), 0);
+
+  // Filtros
+  const allFilt = orders.filter(o => {
+    const ms = !adminSrch || o.nome?.toLowerCase().includes(adminSrch.toLowerCase()) || o.telefone?.includes(adminSrch);
+    const mf = adminFlt === "todos" || o.status === adminFlt;
+    return ms && mf;
+  }).sort((a, b) => new Date(a.entrega) - new Date(b.entrega));
+  const byDate = {};
+  allFilt.forEach(o => { if (!byDate[o.entrega]) byDate[o.entrega] = []; byDate[o.entrega].push(o); });
+  const sortDates = Object.keys(byDate).sort();
+
+  // Aniversariantes
+  const mesMes = now.getMonth() + 1;
+  const aniversariantes = clients.filter(c => c.aniversario && Number(c.aniversario.split("-")[1]) === mesMes);
+
+  // ── Detalhe do pedido ──────────────────────────────────────────
+  if (selOrd) {
+    const isEntrega  = !selOrd.regiao?.isRetirada;
+    const saldoAdmin = (selOrd.valor||0) - (selOrd.caucao||0);
+    const urlMaps    = selOrd.endereco ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selOrd.endereco)}` : null;
+
+    return (
+      <div style={{ fontFamily: "'Nunito',sans-serif", background: "#FDF6FB", minHeight: "100vh" }}>
+        <Hdr title="Detalhes do Pedido" onBack={() => setSelOrdId(null)} />
+        <div style={{ padding: 16, maxWidth: 520, margin: "0 auto" }}>
+
+          <Card ch={<>
+            <div style={{ fontWeight: 900, fontSize: 17 }}>{selOrd.nome}</div>
+            <div style={{ fontSize: 13, color: "#888" }}>{selOrd.telefone}</div>
+            {selOrd.endereco && <div style={{ fontSize: 12, marginTop: 2 }}>📍 {selOrd.endereco}</div>}
+            <div style={{ fontSize: 13, color: "#555", marginTop: 4, marginBottom: 6 }}>📅 {fmtDt(selOrd.entrega)} {selOrd.hora ? `às ${selOrd.hora}` : ""} · {selOrd.regiao?.nome ?? "—"}</div>
+            <StatusBar status={selOrd.status} />
+            <div style={{ marginTop: 6 }}><Badge s={selOrd.status} /></div>
+            {selOrd.checksum && <div style={{ fontSize: 10, color: "#9CA3AF", fontFamily: "monospace", marginTop: 4 }}>🔒 {selOrd.checksum}</div>}
+
+            {/* Itens */}
+            <div style={{ marginTop: 10 }}>
+              {(selOrd.itens ?? []).map((it, i) => {
+                const p   = getPrecoItem(it, cfg?.adicionalGourmet);
+                const isU = it.tipo === "upsell";
+                const nm  = isU ? it.nome : (TIPOS.find(t => t.id === it.tipo)?.nome ?? it.tipo);
+                return (
+                  <div key={i} style={{ background: "#FDF6FB", borderRadius: 10, padding: "8px 12px", marginBottom: 6 }}>
+                    <div style={{ fontWeight: 800, color: pk }}>{nm}</div>
+                    {p != null && <div style={{ fontSize: 13 }}>{fmtR(p)}</div>}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div style={{ borderTop: `2px solid ${pkL}`, paddingTop: 10, marginTop: 6 }}>
+              <div style={{ fontWeight: 900 }}>Total: {selOrd.valor ? fmtR(selOrd.valor) : "Sob consulta"}</div>
+              <div style={{ color: "#BE185D" }}>Caução: {selOrd.caucao ? fmtR(selOrd.caucao) : "—"}</div>
+              {saldoAdmin > 0 && isSinalPago(selOrd.status) && (
+                <div style={{ fontWeight: 900, color: "#B45309" }}>💳 SALDO: {fmtR(saldoAdmin)}</div>
+              )}
+            </div>
+          </>} />
+
+          {/* Frete */}
+          {isEntrega && (
+            <Card ch={<>
+              <div style={{ fontWeight: 800, marginBottom: 8 }}>🚚 Frete Manual</div>
+              <Fld label="Valor do frete (R$)">
+                <input type="number" min="0" step="0.50" value={selOrd.freteManual || 0}
+                  onChange={e => updateOrd(selOrd.id, { freteManual: Number(e.target.value) })}
+                  style={{ width:"100%",border:"1px solid #E5D0EE",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",background:"#fff" }} />
+              </Fld>
+            </>} />
+          )}
+
+          {/* Status */}
+          <Card ch={<>
+            <label style={{ fontSize: 13, fontWeight: 700 }}>Atualizar Status:</label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+              {STATUS_UNICO.map(st => (
+                <button key={st} style={{ background: selOrd.status === st ? pk : "#F3E6F0", color: selOrd.status === st ? "#fff" : "#6B4C7A", border: "none", borderRadius: 20, padding: "6px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer" }} onClick={() => updateOrd(selOrd.id, { status: st })}>
+                  {STATUS_META[st]?.em} {st}
+                </button>
+              ))}
+            </div>
+          </>} />
+
+          {/* Ações */}
+          {isEntrega && urlMaps && (
+            <a href={urlMaps} target="_blank" rel="noreferrer" style={{ display: "block", marginBottom: 8, textDecoration: "none" }}>
+              <button style={{ width: "100%", background: "#EFF6FF", color: "#1D4ED8", border: "1.5px solid #BFDBFE", borderRadius: 12, padding: 11, fontWeight: 700, cursor: "pointer" }}>📍 Ver rota no Google Maps</button>
+            </a>
+          )}
+          {saldoAdmin > 0 && isSinalPago(selOrd.status) && selOrd.telefone && (
+            <a href={`https://wa.me/${selOrd.telefone.replace(/\D/g,"")}?text=${encodeURIComponent(`Olá ${selOrd.nome}! Seu saldo restante é ${fmtR(saldoAdmin)}. 😊`)}`} target="_blank" rel="noreferrer" style={{ display: "block", marginBottom: 8 }}>
+              <button style={{ width: "100%", background: "#FFF7ED", color: "#B45309", border: "1.5px solid #FDE68A", borderRadius: 12, padding: 11, fontWeight: 700, cursor: "pointer" }}>💳 Cobrar saldo ({fmtR(saldoAdmin)})</button>
+            </a>
+          )}
+          <button onClick={() => setLabelOrd(san(selOrd))} style={{ width: "100%", background: "#EFF6FF", color: "#1D4ED8", border: "1.5px solid #BFDBFE", borderRadius: 12, padding: 11, fontWeight: 700, cursor: "pointer", marginBottom: 8 }}>🏷️ Etiqueta / Recibo</button>
+          <button onClick={() => setPinDlg({ msg: "Excluir este pedido?", onOk: () => { removeOrd(selOrd.id); setSelOrdId(null); } })} style={{ width: "100%", background: "#FEF2F2", color: "#DC2626", border: "none", borderRadius: 12, padding: 12, fontWeight: 700, cursor: "pointer" }}>🗑 Excluir pedido</button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Lista de clientes ──────────────────────────────────────────
+  if (showClts) return (
+    <div style={{ fontFamily: "'Nunito',sans-serif", background: "#FDF6FB", minHeight: "100vh" }}>
+      <Hdr title="👥 Clientes" onBack={() => setShowClts(false)} />
+      <div style={{ padding: 16, maxWidth: 520, margin: "0 auto" }}>
+        {clients.length === 0
+          ? <div style={{ textAlign: "center", padding: "32px 0", color: "#888" }}>Nenhum cliente cadastrado</div>
+          : clients.map(c => (
+            <div key={c.id} style={{ background: "#fff", border: `1px solid ${pkL}`, borderRadius: 14, padding: 14, marginBottom: 8 }}>
+              <div style={{ fontWeight: 900 }}>{c.nome}</div>
+              <div style={{ fontSize: 13, color: "#888" }}>{c.telefone}</div>
+              {c.aniversario && <div style={{ fontSize: 12, color: "#C084B4" }}>🎂 {fmtDt(c.aniversario)}</div>}
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  );
+
+  // ── Painel principal ───────────────────────────────────────────
+  return (
+    <div style={{ fontFamily: "'Nunito',sans-serif", background: "#FDF6FB", minHeight: "100vh" }}>
+      {/* Header */}
+      <div style={{ background: "#fff", borderBottom: `2px solid ${pkL}`, padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <button onClick={onBack} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer" }}>←</button>
+          <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 17, fontWeight: 700, color: pk }}>PCP Gerência</span>
+        </div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {urgentes > 0 && <span style={{ background: "#DC2626", color: "#fff", borderRadius: 20, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>⚠ {urgentes}</span>}
+          <button onClick={() => setShowClts(true)} style={{ background: pkL, color: pk, border: "none", borderRadius: 20, padding: "4px 12px", fontWeight: 700, cursor: "pointer" }}>👥 {clients.length}</button>
+        </div>
+      </div>
+
+      {/* Abas */}
+      <div style={{ display: "flex", overflowX: "auto", background: "#fff", borderBottom: `2px solid ${pkL}` }}>
+        {[["hoje","📅 Agenda"],["caucao","💰 Caução"],["todos","📋 Todos"],["stats","📊 Stats"],["mkt","🎂 CRM"],["configs","⚙️ Config"]].map(([v, l]) => (
+          <button key={v} style={{ flexShrink: 0, padding: "10px 12px", border: "none", background: "none", fontSize: 11, fontWeight: 700, color: adminTab===v?pk:"#9CA3AF", borderBottom: adminTab===v?`3px solid ${pk}`:"3px solid transparent", cursor: "pointer" }} onClick={() => setAdminTab(v)}>
+            {l}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ padding: 16, maxWidth: 560, margin: "0 auto" }}>
+
+        {/* HOJE */}
+        {adminTab === "hoje" && <>
+          <h3 style={{ fontSize: 17, fontWeight: 900 }}>Hoje · {fmtDt(hoy)}</h3>
+          {todayOrds.length === 0
+            ? <div style={{ textAlign: "center", padding: "32px 0", color: "#C084B4" }}>📭 Sem entregas hoje</div>
+            : todayOrds.map(o => (
+              <div key={o.id} className="hov" style={{ background: "#fff", border: `1px solid ${pkL}`, borderLeft: `4px solid ${STATUS_META[o.status]?.brd||pk}`, borderRadius: 14, padding: 14, marginBottom: 8, cursor: "pointer" }} onClick={() => setSelOrdId(o.id)}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <div><div style={{ fontWeight: 900 }}>{o.nome}</div>{o.hora && <div style={{ fontSize: 12, color: "#888" }}>⏰ {o.hora}</div>}</div>
+                  <Badge s={o.status} />
+                </div>
+                <StatusBar status={o.status} />
+              </div>
+            ))
+          }
+        </>}
+
+        {/* CAUÇÃO */}
+        {adminTab === "caucao" && <>
+          <h3>💰 Aguardando Caução</h3>
+          {orders.filter(o => o.status === "Aguardando Caução").length === 0
+            ? <div style={{ textAlign: "center", padding: "24px 0", color: "#C084B4" }}>✅ Nenhum pendente</div>
+            : orders.filter(o => o.status === "Aguardando Caução").map(o => (
+              <Card key={o.id} ch={<>
+                <div style={{ fontWeight: 900 }}>{o.nome}</div>
+                <div style={{ fontSize: 13 }}>{fmtDt(o.entrega)} · {o.valor ? fmtR(o.valor) : "?"}</div>
+                <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                  <BtnS ch="Ver" st={{ flex: 1 }} onClick={() => setSelOrdId(o.id)} />
+                  <Btn ch="✅ Confirmar" st={{ flex: 1, background: "#15803D" }} onClick={() => updateOrd(o.id, { status: "Confirmado" })} />
+                </div>
+              </>} />
+            ))
+          }
+        </>}
+
+        {/* TODOS */}
+        {adminTab === "todos" && <>
+          <input value={adminSrch} onChange={e => setAdminSrch(e.target.value)} placeholder="🔍 Buscar por nome ou telefone..." style={{ width: "100%", border: "1px solid #E5D0EE", borderRadius: 10, padding: "10px 12px", fontSize: 14, outline: "none", marginBottom: 10, boxSizing: "border-box" }} />
+          <div style={{ display: "flex", gap: 6, overflowX: "auto", marginBottom: 12 }}>
+            {["todos", ...STATUS_UNICO].map(st => (
+              <button key={st} style={{ background: adminFlt===st?pk:"#fff", color: adminFlt===st?"#fff":"#6B4C7A", border: `1.5px solid ${adminFlt===st?pk:"#E5D0EE"}`, borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", cursor: "pointer" }} onClick={() => setAdminFlt(st)}>
+                {st === "todos" ? "Todos" : (STATUS_META[st]?.em+" "+st)}
+              </button>
+            ))}
+          </div>
+          {sortDates.length === 0
+            ? <div style={{ textAlign: "center", padding: "24px 0", color: "#C084B4" }}>Nenhum resultado</div>
+            : sortDates.map(dt => (
+              <div key={dt}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: "#C084B4", margin: "10px 0 4px" }}>{fmtDt(dt)}</div>
+                {byDate[dt].map(o => (
+                  <div key={o.id} className="hov" style={{ background: "#fff", border: `1px solid ${pkL}`, borderLeft: `4px solid ${o.status==="Aguardando Caução"?"#F59E0B":pk}`, borderRadius: 14, padding: 14, marginBottom: 8, cursor: "pointer" }} onClick={() => setSelOrdId(o.id)}>
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ fontWeight: 900 }}>{o.nome}</span>
+                      <Badge s={o.status} />
+                    </div>
+                    <div style={{ fontSize: 13, color: "#888" }}>{(o.itens??[]).length} itens · {o.valor ? fmtR(o.valor) : "—"}</div>
+                  </div>
+                ))}
+              </div>
+            ))
+          }
+        </>}
+
+        {/* STATS */}
+        {adminTab === "stats" && <>
+          <h3 style={{ fontSize: 17, fontWeight: 900, marginBottom: 14 }}>📊 Dashboard</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+            {[
+              { l:"Hoje",           icon:"📅", v: fmtR(todayOrds.filter(o=>o.status!=="Cancelado").reduce((s,o)=>s+Number(o.valor||0),0)), sub:`${todayOrds.filter(o=>o.status!=="Cancelado").length} pedidos`, c: pk },
+              { l:"Semana",         icon:"📆", v: fmtR(semOrds.reduce((s,o)=>s+Number(o.valor||0),0)),  sub:`${semOrds.length} pedidos`, c:"#7C3AED" },
+              { l:"Mês (confirm.)", icon:"💰", v: fmtR(totalMes),  sub:`${ordsMes.length} pedidos`, c:"#0891B2" },
+              { l:"Mês (finaliz.)", icon:"🚀", v: fmtR(totalFin),  sub:"receita recebida",             c:"#15803D" },
+            ].map((x, i) => (
+              <div key={i} style={{ background: "#fff", borderTop: `3px solid ${x.c}`, borderRadius: 14, padding: 14 }}>
+                <div style={{ fontSize: 11, color: "#888" }}>{x.icon} {x.l}</div>
+                <div style={{ fontSize: 16, fontWeight: 900, color: x.c, margin: "2px 0" }}>{x.v}</div>
+                <div style={{ fontSize: 10, color: "#aaa" }}>{x.sub}</div>
+              </div>
+            ))}
+          </div>
+          <Card ch={<>
+            <div style={{ fontWeight: 800, marginBottom: 10 }}>📋 Pedidos por Status</div>
+            {STATUS_UNICO.map(st => {
+              const cnt  = orders.filter(o => o.status === st).length;
+              const pct  = Math.round((cnt / (orders.length || 1)) * 100);
+              const meta = STATUS_META[st];
+              return (
+                <div key={st} style={{ marginBottom: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 3 }}>
+                    <span style={{ color: meta.text, fontWeight: 700 }}>{meta.em} {st}</span>
+                    <span style={{ fontWeight: 900 }}>{cnt} <span style={{ color: "#aaa", fontWeight: 400 }}>({pct}%)</span></span>
+                  </div>
+                  <div style={{ background: "#F3F4F6", borderRadius: 6, height: 6 }}>
+                    <div style={{ background: meta.text, borderRadius: 6, height: 6, width: `${pct}%`, transition: "width .4s" }} />
+                  </div>
+                </div>
+              );
+            })}
+          </>} />
+          {urgentes > 0 && (
+            <div style={{ background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 14, padding: 14 }}>
+              <div style={{ fontWeight: 900, color: "#DC2626" }}>⚠️ {urgentes} pedido{urgentes!==1?"s":""} atrasado{urgentes!==1?"s":""}</div>
+              <div style={{ fontSize: 12, color: "#DC2626" }}>Data de entrega passada sem status final.</div>
+            </div>
+          )}
+        </>}
+
+        {/* CRM */}
+        {adminTab === "mkt" && <>
+          <h3 style={{ fontSize: 17, fontWeight: 900 }}>🎂 Aniversariantes de {now.toLocaleString("pt-BR",{month:"long"})}</h3>
+          {aniversariantes.length === 0
+            ? <div style={{ textAlign: "center", padding: "24px 0", color: "#C084B4" }}>Nenhum aniversariante este mês</div>
+            : aniversariantes.map(c => (
+              <div key={c.id} style={{ background: "#fff", border: `1px solid ${pkL}`, borderLeft: "4px solid #FFD700", borderRadius: 14, padding: 14, marginBottom: 10 }}>
+                <div style={{ fontWeight: 900 }}>{c.nome}</div>
+                <div style={{ fontSize: 13, color: "#888" }}>{fmtDt(c.aniversario)}</div>
+                <a href={`https://wa.me/${c.telefone?.replace(/\D/g,"")}?text=${encodeURIComponent(`🎂 Feliz aniversário, ${c.nome?.split(" ")[0]}! Temos um mimo especial para você! 🌸`)}`} target="_blank" rel="noreferrer">
+                  <button style={{ background: "#25D366", color: "#fff", border: "none", borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 700, marginTop: 8, cursor: "pointer" }}>💬 WhatsApp</button>
+                </a>
+              </div>
+            ))
+          }
+        </>}
+
+        {/* CONFIGS */}
+        {adminTab === "configs" && (
+          <ConfigsPanel cfg={cfg} onSave={setCfg} tipos={tipos} onUpdateTipos={setTipos} maintenanceMode={maintenanceMode} onSetMaintenance={setMaintenanceMode} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\screens\ClientArea.js ---
+
+import React from "react";
+import { Badge }     from "../components/Badge";
+import { StatusBar } from "../components/StatusBar";
+import { Btn }       from "../components/Btn";
+import { fmtR, fmtDt, isSinalPago, calcPontos, san } from "../utils/helpers";
+import { pk, pkL, pkD } from "../utils/constants";
+
+export function ClientArea({ clientUser, orders, tipos, cfg, maintenanceMode, onNovoPedido, onLogout, onBack }) {
+  const TIPOS = tipos ?? [];
+  const meus  = orders
+    .filter(o => o.clienteId === clientUser.id)
+    .sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm));
+  const pontos = calcPontos(clientUser.id, orders);
+
+  const repetirPedido = (order) => {
+    // Navega para pedido-info; o App.js pode estender para pré-carregar o carrinho
+    if (order?.itens) onNovoPedido(san(order.itens));
+    else onNovoPedido();
+  };
+
+  return (
+    <div style={{ fontFamily: "'Nunito',sans-serif", background: "#FDF6FB", minHeight: "100vh" }}>
+      {/* Header colorido */}
+      <div style={{ background: `linear-gradient(135deg,${pk},${pkD})`, padding: "20px 18px 32px" }}>
+        <button onClick={onBack} style={{ background: "rgba(255,255,255,.2)", border: "none", color: "#fff", borderRadius: 8, padding: "4px 10px", fontWeight: 700, marginBottom: 12, cursor: "pointer" }}>
+          ← Voltar
+        </button>
+        <div style={{ color: "#fff" }}>
+          <div style={{ fontSize: 12, opacity: .8 }}>Bem-vinda! 🌸</div>
+          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 700 }}>{clientUser.nome}</div>
+          <div style={{ fontSize: 13, opacity: .8 }}>{clientUser.telefone}</div>
+          {clientUser.aniversario && <div style={{ fontSize: 12, opacity: .7 }}>🎂 {fmtDt(clientUser.aniversario)}</div>}
+          <div style={{ fontSize: 12, marginTop: 4, opacity: .85 }}>⭐ {pontos} pontos</div>
+        </div>
+      </div>
+
+      <div style={{ padding: 16, maxWidth: 500, margin: "0 auto", marginTop: -16 }}>
+        <Btn
+          ch="🎂 Novo pedido"
+          st={{ marginBottom: 16 }}
+          disabled={maintenanceMode}
+          onClick={() => !maintenanceMode && onNovoPedido()}
+        />
+
+        <h3 style={{ fontSize: 16, fontWeight: 900, marginBottom: 12 }}>Meus pedidos ({meus.length})</h3>
+
+        {meus.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "32px 0", color: "#C084B4" }}>
+            <div style={{ fontSize: 36 }}>📦</div>
+            <p>Nenhum pedido ainda.</p>
+          </div>
+        ) : meus.map(o => {
+          const saldo = (o.valor || 0) - (o.caucao || 0);
+          return (
+            <div key={o.id} className="hov" style={{ background: "#fff", border: `1px solid ${pkL}`, borderLeft: `4px solid ${pk}`, borderRadius: 14, padding: 14, marginBottom: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                <div style={{ fontSize: 13, color: "#888" }}>📅 {fmtDt(o.entrega)}</div>
+                <Badge s={o.status} />
+              </div>
+              <StatusBar status={o.status} />
+              {(o.itens ?? []).slice(0, 2).map((it, i) => {
+                const nm = it.tipo === "upsell" ? it.nome : (TIPOS.find(t => t.id === it.tipo)?.nome ?? it.tipo);
+                return <div key={i} style={{ fontSize: 13, color: "#444", marginTop: 4 }}>🎂 {nm}</div>;
+              })}
+              <div style={{ marginTop: 6, fontWeight: 800, color: pk }}>{o.valor ? fmtR(o.valor) : "Sob consulta"}</div>
+              {saldo > 0 && isSinalPago(o.status) && (
+                <div style={{ fontSize: 12, color: "#B45309", fontWeight: 700 }}>💳 SALDO: {fmtR(saldo)}</div>
+              )}
+              <button onClick={() => repetirPedido(o)} style={{ background: pkL, color: pk, border: "none", borderRadius: 8, padding: "4px 10px", fontSize: 11, fontWeight: 700, marginTop: 8, cursor: "pointer" }}>
+                🔄 Repetir pedido
+              </button>
+            </div>
+          );
+        })}
+
+        <button
+          onClick={onLogout}
+          style={{ width: "100%", background: "none", border: "1.5px solid #E5D0EE", borderRadius: 12, padding: 11, fontWeight: 700, color: "#9CA3AF", marginTop: 8, cursor: "pointer" }}
+        >
+          Sair da conta
+        </button>
+      </div>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\screens\ClientLogin.js ---
+
+import React from "react";
+import { ClientAuth } from "../components/ClientAuth";
+
+export function ClientLoginScreen({ clients, onLogin, onRegister, onBack }) {
+  return (
+    <ClientAuth
+      mode="login"
+      clients={clients}
+      onLogin={onLogin}
+      onRegister={onRegister}
+      onBack={onBack}
+    />
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\screens\ClientRegister.js ---
+
+import React from "react";
+import { ClientAuth } from "../components/ClientAuth";
+
+export function ClientRegisterScreen({ onSave, onBack }) {
+  return (
+    <ClientAuth
+      mode="register"
+      onSave={onSave}
+      onBack={onBack}
+    />
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\screens\Home.js ---
+
+import React from "react";
+import { TIPOS_BASE, pk, pkD, pkL } from "../utils/constants";
+
+const DESTAQUES = [
+  { nome: "Bolo Chantilly",          preco: "a partir de R$ 110",  emoji: "🎂" },
+  { nome: "Palitinhos de Chocolate", preco: "a partir de R$ 130",  emoji: "🍫" },
+  { nome: "Bentô Cake",              preco: "R$ 50 – R$ 55",       emoji: "🎁" },
+];
+
+export function Home({ NOME_APP, cart, clientUser, maintenanceMode, setScreen, onLogoClick, onPedido, onLogin, onAccount }) {
+  return (
+    <div style={{
+      fontFamily: "'Nunito', sans-serif",
+      background: "#FFF9F2",
+      minHeight: "100vh",
+      display: "flex",
+      flexDirection: "column",
+      position: "relative",
+    }}>
+      {/* Header */}
+      <header style={{ padding: "40px 20px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div onClick={onLogoClick} style={{ cursor: "pointer" }}>
+          <p style={{ margin: 0, fontSize: 13, color: "#D89A9E", fontWeight: 700 }}>Bem-vinda! 🌸</p>
+          <h1 style={{ fontSize: 26, fontWeight: 900, color: "#4A2C2A", margin: 0, fontFamily: "serif" }}>{NOME_APP}</h1>
+          {clientUser && <p style={{ margin: "2px 0 0", fontSize: 12, color: "#A1887F" }}>Olá, {clientUser.nome?.split(" ")[0]}!</p>}
+        </div>
+        <div
+          onClick={() => cart.length > 0 ? setScreen("pedido-cart") : null}
+          style={{ background: "#fff", padding: 10, borderRadius: "50%", boxShadow: "0 4px 10px rgba(0,0,0,0.06)", cursor: "pointer", fontSize: 20, position: "relative" }}
+        >
+          🛒
+          {cart.length > 0 && (
+            <span style={{ position: "absolute", top: -4, right: -4, background: pk, color: "#fff", borderRadius: "50%", width: 18, height: 18, fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {cart.length}
+            </span>
+          )}
+        </div>
+      </header>
+
+      {/* Manutenção */}
+      {maintenanceMode && (
+        <div style={{ background: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: 10, margin: "0 20px 12px", padding: "10px 14px", fontSize: 13, color: "#92400E", fontWeight: 700 }}>
+          🔧 Sistema em manutenção — pedidos temporariamente suspensos
+        </div>
+      )}
+
+      {/* Destaques */}
+      <div style={{ padding: "0 20px 16px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <h3 style={{ color: "#4A2C2A", fontSize: 15, margin: 0, fontWeight: 800 }}>Nossas Delícias</h3>
+          <span style={{ fontSize: 11, color: "#A1887F", fontWeight: 700 }}>Feito com amor 🧁</span>
+        </div>
+        <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 8 }}>
+          {DESTAQUES.map((p, i) => (
+            <div key={i} style={{
+              minWidth: 130, background: "#fff", padding: 12, borderRadius: 14,
+              textAlign: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", flexShrink: 0,
+            }}>
+              <div style={{ background: "#FDF0EF", height: 70, borderRadius: 10, marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>
+                {p.emoji}
+              </div>
+              <p style={{ fontSize: 11, fontWeight: 800, margin: "0 0 3px", color: "#4A2C2A", lineHeight: 1.3 }}>{p.nome}</p>
+              <span style={{ fontWeight: 700, color: pk, fontSize: 10 }}>{p.preco}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Corpo escuro */}
+      <div style={{ background: "#FFC2D1", borderTopLeftRadius: 50, borderTopRightRadius: 50, flex: 1, display: "flex", flexDirection: "column", marginTop: 10 }}>
+        <div style={{
+          background: "#4A2C2A",
+          borderTopLeftRadius: 50, borderTopRightRadius: 50,
+          flex: 1, marginTop: 60, padding: "0 20px 100px",
+          display: "flex", flexDirection: "column", alignItems: "center",
+          position: "relative",
+        }}>
+          {/* Botões principais */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", width: "100%", maxWidth: 340, marginTop: -55 }}>
+
+            <div
+              onClick={onAccount}
+              style={{ textAlign: "center", cursor: "pointer", background: "#E598A8", padding: "15px 5px", borderRadius: "30px 30px 10px 10px", width: 78, boxShadow: "0 5px 15px rgba(0,0,0,0.2)" }}
+            >
+              <div style={{ fontSize: 20, marginBottom: 2 }}>{clientUser ? "👤" : "🔑"}</div>
+              <p style={{ fontSize: 10, color: "#4A2C2A", fontWeight: 800, margin: 0, lineHeight: 1.2 }}>
+                {clientUser ? "Minha\nConta" : "Entrar /\nCadastrar"}
+              </p>
+            </div>
+
+            <button
+              onClick={onPedido}
+              disabled={maintenanceMode}
+              style={{
+                width: 125, height: 125, borderRadius: "50%",
+                background: maintenanceMode
+                  ? "#999"
+                  : "linear-gradient(135deg, #E598A8, #C25975)",
+                color: "#fff", border: "6px solid #E6C280",
+                fontSize: 13, fontWeight: 800, cursor: maintenanceMode ? "not-allowed" : "pointer",
+                boxShadow: "0 10px 25px rgba(0,0,0,0.35)",
+                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                transform: "translateY(-15px)", lineHeight: 1.3,
+              }}
+            >
+              <span style={{ fontSize: 26, marginBottom: 3 }}>🎂</span>
+              <span>Fazer<br />Pedido</span>
+            </button>
+
+            <div
+              onClick={() => setScreen("client-login")}
+              style={{ textAlign: "center", cursor: "pointer", background: "#E6C280", padding: "15px 5px", borderRadius: "30px 30px 10px 10px", width: 78, boxShadow: "0 5px 15px rgba(0,0,0,0.2)" }}
+            >
+              <div style={{ fontSize: 20, marginBottom: 2 }}>🛒</div>
+              <p style={{ fontSize: 10, color: "#4A2C2A", fontWeight: 800, margin: 0, lineHeight: 1.2 }}>
+                Meus<br />Pedidos
+              </p>
+            </div>
+          </div>
+
+          {/* Acesso admin */}
+          <div style={{ marginTop: 40 }}>
+            <button
+              onClick={() => setScreen("admin-login")}
+              style={{
+                background: "transparent", border: "1px solid #E6C280",
+                borderRadius: 25, padding: "11px 28px", color: "#E6C280",
+                cursor: "pointer", fontSize: 12, fontWeight: 700,
+                display: "flex", alignItems: "center", gap: 8,
+              }}
+            >
+              <span style={{ fontSize: 15 }}>⚙️</span> Acesso Administrativo
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer style={{
+        position: "fixed", bottom: 0, width: "100%",
+        background: "#FFF9F2", display: "flex", justifyContent: "space-around",
+        padding: "13px 0", borderTop: "1px solid #E6C280",
+        fontSize: 22, borderRadius: "20px 20px 0 0", zIndex: 10,
+      }}>
+        <span onClick={() => setScreen("home")}         style={{ cursor: "pointer", color: pk }}>🏠</span>
+        <span onClick={onPedido}                        style={{ cursor: "pointer", color: "#4A2C2A" }}>🎂</span>
+        <span onClick={onAccount}                       style={{ cursor: "pointer", color: "#4A2C2A" }}>👤</span>
+        <span onClick={() => cart.length > 0 ? setScreen("pedido-cart") : null} style={{ cursor: "pointer", color: "#4A2C2A" }}>🛒</span>
+      </footer>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\screens\KernelLogin.js ---
+
+import React, { useState } from "react";
+import { Btn } from "../components/Btn";
+import { DEV_PASS } from "../utils/constants";
+
+export function KernelLoginScreen({ onLogin, onBack, lockedUntil, lockLeft }) {
+  const [pass, setPass] = useState("");
+  const [err, setErr] = useState(false);
+  const locked = Date.now() < lockedUntil;
+
+  return (
+    <div style={{ background: "#0a0a0a", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, fontFamily: "'Share Tech Mono', monospace" }}>
+      <div className="fu" style={{ background: "#111", border: "1px solid #00ff88", borderRadius: 12, padding: 28, width: "100%", maxWidth: 340 }}>
+        <div style={{ color: "#00ff88", fontSize: 24, marginBottom: 4, textAlign: "center" }}>▣ KERNEL ACCESS</div>
+        <div style={{ color: "#555", fontSize: 11, textAlign: "center", marginBottom: 20 }}>Sistema restrito — nível raiz</div>
+        
+        {locked ? (
+          <div style={{ color: "#ff4444", textAlign: "center", padding: 16 }}>🔒 BLOQUEADO — {lockLeft}s</div>
+        ) : (
+          <>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 11, color: "#00ff88", display: "block", marginBottom: 4 }}>SENHA_DEV:</label>
+              <input type="password" value={pass} onChange={e => { setPass(e.target.value); setErr(false); }} style={{ width: "100%", padding: "8px", borderRadius: 6, background: "#111", border: "1px solid #00ff88", color: "#00ff88" }} />
+            </div>
+            {err && <div style={{ color: "#ff4444", fontSize: 12, marginBottom: 10 }}>❌ Acesso negado</div>}
+            <Btn ch="AUTENTICAR →" st={{ background: "transparent", border: "1px solid #00ff88", color: "#00ff88" }} onClick={() => { if (pass === DEV_PASS) onLogin(); else setErr(true); }} />
+          </>
+        )}
+        <button onClick={onBack} style={{ width: "100%", background: "none", border: "none", color: "#333", marginTop: 14, cursor: "pointer", fontFamily: "'Share Tech Mono', monospace", fontSize: 12 }}>← ABORTAR</button>
+      </div>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\screens\KernelPanel.js ---
+
+import React, { useState, useRef, useEffect } from "react";
+import { LS, san, today } from "../utils/helpers";
+import { STATUS_UNICO } from "../utils/constants";
+
+export function KernelPanel({ orders, clients, cfg, maintenanceMode, onSetMaintenance, onSetLicense, onSetOrders, onSetClients, onSetCfg, onBack }) {
+  const [tab,          setTab]         = useState("terminal");
+  const [cmd,          setCmd]         = useState("");
+  const [output,       setOutput]      = useState([{ type: "sys", text: "Fabiana Bolos Kernel v2.0 — ready. Digite 'help'." }]);
+  const [licDate,      setLicDate]     = useState(cfg.licenseExpiry || "");
+  const [licSaved,     setLicSaved]    = useState(false);
+  const [confirmReset, setConfirmReset]= useState("");
+  const termRef = useRef(null);
+
+  useEffect(() => { if (termRef.current) termRef.current.scrollTop = termRef.current.scrollHeight; }, [output]);
+
+  const color = { sys: "#555", out: "#00ff88", ok: "#00ffaa", err: "#ff4444", cmd: "#ffff00" };
+
+  const runCmd = () => {
+    const c   = cmd.trim();
+    const cLo = c.toLowerCase();
+    if (!c) return;
+    let result = "";
+    let type   = "out";
+
+    if (cLo === "help") {
+      result = [
+        "  status           — visão geral",
+        "  orders           — JSON dos pedidos",
+        "  orders:count     — pedidos por status",
+        "  clients          — JSON dos clientes",
+        "  storage          — uso do localStorage",
+        "  maintenance on   — ativar manutenção",
+        "  maintenance off  — desativar manutenção",
+        "  license:show     — exibir licença atual",
+        "  purge:cancelled  — remover cancelados",
+        "  clear            — limpar terminal",
+      ].join("\n");
+    }
+    else if (cLo === "status") {
+      result = `Pedidos: ${orders.length} | Clientes: ${clients.length} | Licença: ${cfg.licenseExpiry} | Manutenção: ${maintenanceMode?"ATIVA":"off"} | Storage: ${LS.usage().totalKB}KB`;
+    }
+    else if (cLo === "orders") {
+      result = JSON.stringify(orders.map(o => ({ id: o.id, nome: o.nome, status: o.status, entrega: o.entrega, valor: o.valor })), null, 2);
+    }
+    else if (cLo === "orders:count") {
+      const counts = {};
+      STATUS_UNICO.forEach(s => { counts[s] = orders.filter(o => o.status === s).length; });
+      result = Object.entries(counts).map(([s, n]) => `  ${s.padEnd(36)}: ${n}`).join("\n");
+    }
+    else if (cLo === "clients") {
+      result = JSON.stringify(clients.map(c => ({ id: c.id, nome: c.nome, telefone: c.telefone })), null, 2);
+    }
+    else if (cLo === "storage") {
+      const u = LS.usage();
+      result = `Total: ${u.totalKB}KB\n` + u.items.map(i => `  ${i.k.padEnd(26)} ${i.sz}`).join("\n");
+    }
+    else if (cLo === "maintenance on")  { onSetMaintenance(true);  result = "✅ Manutenção ATIVADA";    type = "ok"; }
+    else if (cLo === "maintenance off") { onSetMaintenance(false); result = "✅ Manutenção DESATIVADA"; type = "ok"; }
+    else if (cLo === "license:show") { result = `Licença: ${cfg.licenseExpiry}`; }
+    else if (cLo === "purge:cancelled") {
+      const antes = orders.length;
+      const filtrado = orders.filter(o => o.status !== "Cancelado");
+      onSetOrders(filtrado);
+      result = `✅ ${antes - filtrado.length} cancelados removidos. Restam: ${filtrado.length}`;
+      type = "ok";
+    }
+    else if (cLo === "clear") { setOutput([{ type: "sys", text: "Terminal limpo." }]); setCmd(""); return; }
+    else { result = `❌ Comando desconhecido: "${c}"  — Digite 'help'.`; type = "err"; }
+
+    setOutput(p => [...p, { type: "cmd", text: `> ${c}` }, { type, text: result }]);
+    setCmd("");
+  };
+
+  return (
+    <div style={{ fontFamily: "'Share Tech Mono',monospace", background: "#0a0a0a", minHeight: "100vh", color: "#00ff88" }}>
+
+      {/* Header */}
+      <div style={{ background: "#111", borderBottom: "1px solid #00ff88", padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button onClick={onBack} style={{ background: "transparent", border: "1px solid #00ff88", color: "#00ff88", padding: "4px 10px", borderRadius: 6, cursor: "pointer", fontFamily: "inherit", fontSize: 12 }}>← SAIR</button>
+          <span style={{ fontSize: 14, fontWeight: 700 }}>▣ KERNEL — FABIANA BOLOS</span>
+        </div>
+        <span style={{ color: "#333", fontSize: 10 }}>{new Date().toLocaleString("pt-BR")}</span>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: "flex", background: "#0a0a0a", borderBottom: "1px solid #1a1a1a" }}>
+        {[["terminal","⬛ Terminal"],["system","⚙ System"],["storage","💾 Storage"]].map(([v, l]) => (
+          <button key={v} onClick={() => setTab(v)}
+            style={{ background: "transparent", border: "none", color: tab===v?"#00ff88":"#555", padding: "8px 14px", fontFamily: "inherit", cursor: "pointer", fontSize: 12, borderBottom: `2px solid ${tab===v?"#00ff88":"transparent"}` }}>
+            {l}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ padding: 16, maxWidth: 700, margin: "0 auto" }}>
+
+        {/* TERMINAL */}
+        {tab === "terminal" && <>
+          <div ref={termRef} style={{ background: "#000", border: "1px solid #1a1a1a", borderRadius: 8, padding: 14, height: 380, overflowY: "auto", marginBottom: 12 }}>
+            {output.map((line, i) => (
+              <div key={i} style={{ color: color[line.type]||"#00ff88", fontSize: 12, lineHeight: 1.7, whiteSpace: "pre-wrap", wordBreak: "break-all" }}>{line.text}</div>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input className="kernel-input" value={cmd} onChange={e => setCmd(e.target.value)} onKeyDown={e => e.key==="Enter"&&runCmd()} placeholder="Digite um comando..." autoFocus style={{ flex: 1, background: "#111", border: "1px solid #00ff88", color: "#00ff88", fontFamily: "inherit", padding: "8px 12px", borderRadius: 6, outline: "none", fontSize: 13 }} />
+            <button onClick={runCmd} style={{ background: "transparent", border: "1px solid #00ff88", color: "#00ff88", padding: "8px 16px", borderRadius: 6, fontFamily: "inherit", cursor: "pointer" }}>RUN</button>
+          </div>
+          <div style={{ fontSize: 10, color: "#333", marginTop: 8 }}>Enter para executar · 'help' para listar comandos</div>
+        </>}
+
+        {/* SYSTEM */}
+        {tab === "system" && <>
+          <div style={{ color: "#ffff00", fontSize: 13, marginBottom: 16 }}>⚙ CONFIGURAÇÕES DO SISTEMA</div>
+
+          {/* Licença */}
+          <div style={{ background: "#111", border: "1px solid #00ff88", borderRadius: 8, padding: 16, marginBottom: 14 }}>
+            <div style={{ color: "#00ff88", fontWeight: 700, marginBottom: 10 }}>🔑 LICENÇA</div>
+            <div style={{ color: "#555", fontSize: 11, marginBottom: 8 }}>Atual: <span style={{ color: "#00ff88" }}>{cfg.licenseExpiry || "—"}</span></div>
+            <label style={{ fontSize: 11, color: "#888", display: "block", marginBottom: 4 }}>NOVA DATA DE EXPIRAÇÃO:</label>
+            <input type="date" value={licDate} min={today()} onChange={e => setLicDate(e.target.value)}
+              style={{ width: "100%", background: "#111", border: "1px solid #00ff88", color: "#00ff88", fontFamily: "inherit", padding: "8px 12px", borderRadius: 6, outline: "none", fontSize: 13, marginBottom: 10, boxSizing: "border-box" }} />
+            <button
+              onClick={() => { if (!licDate) return; onSetLicense(licDate); setLicSaved(true); setTimeout(()=>setLicSaved(false),2000); }}
+              disabled={!licDate}
+              style={{ width: "100%", background: licSaved?"#00ff88":"transparent", color: licSaved?"#0a0a0a":"#00ff88", border: "1px solid #00ff88", borderRadius: 6, padding: "8px", fontFamily: "inherit", cursor: "pointer" }}
+            >
+              {licSaved ? "✅ LICENÇA ATUALIZADA" : "ATUALIZAR LICENÇA →"}
+            </button>
+          </div>
+
+          {/* Manutenção */}
+          <div style={{ background: "#111", border: "1px solid #333", borderRadius: 8, padding: 16, marginBottom: 14 }}>
+            <div style={{ color: "#ffff00", fontWeight: 700, marginBottom: 10 }}>🔧 MODO MANUTENÇÃO</div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => onSetMaintenance(true)}  style={{ flex: 1, background: maintenanceMode?"#ff4444":"transparent",  color: maintenanceMode?"#fff":"#ff4444",  border: `1px solid ${maintenanceMode?"#ff4444":"#555"}`,  borderRadius: 6, padding: 8, fontFamily: "inherit", cursor: "pointer" }}>ATIVAR</button>
+              <button onClick={() => onSetMaintenance(false)} style={{ flex: 1, background: !maintenanceMode?"#00ff88":"transparent", color: !maintenanceMode?"#0a0a0a":"#00ff88", border: `1px solid ${!maintenanceMode?"#00ff88":"#555"}`, borderRadius: 6, padding: 8, fontFamily: "inherit", cursor: "pointer" }}>DESATIVAR</button>
+            </div>
+            <div style={{ fontSize: 10, color: maintenanceMode?"#ff4444":"#00ff88", marginTop: 8 }}>
+              Status: {maintenanceMode ? "🔴 ATIVO — loja bloqueada" : "🟢 NORMAL — loja aberta"}
+            </div>
+          </div>
+
+          {/* Reset */}
+          <div style={{ background: "#111", border: "1px solid #ff4444", borderRadius: 8, padding: 16 }}>
+            <div style={{ color: "#ff4444", fontWeight: 700, marginBottom: 8 }}>⚠ ZONA DE PERIGO</div>
+            <div style={{ color: "#555", fontSize: 11, marginBottom: 8 }}>Digite <span style={{ color: "#ff4444" }}>RESETAR TUDO</span> para confirmar:</div>
+            <input value={confirmReset} onChange={e => setConfirmReset(e.target.value)} placeholder="RESETAR TUDO"
+              style={{ width: "100%", background: "#111", border: "1px solid #ff4444", color: "#ff4444", fontFamily: "inherit", padding: "8px 12px", borderRadius: 6, outline: "none", fontSize: 13, marginBottom: 8, boxSizing: "border-box" }} />
+            <button
+              disabled={confirmReset !== "RESETAR TUDO"}
+              onClick={() => {
+                if (confirmReset !== "RESETAR TUDO") return;
+                ["fab_orders","fab_clients","fab_session","fab_tipos"].forEach(k => LS.del(k));
+                onSetOrders([]); onSetClients([]);
+                setConfirmReset("");
+                setTab("terminal");
+                setOutput(p => [...p, { type: "err", text: "⚠ DADOS RESETADOS" }]);
+              }}
+              style={{ width: "100%", background: "transparent", border: "1px solid #ff4444", color: "#ff4444", borderRadius: 6, padding: 8, fontFamily: "inherit", cursor: "pointer", opacity: confirmReset==="RESETAR TUDO"?1:.4 }}
+            >
+              EXECUTAR RESET TOTAL
+            </button>
+          </div>
+        </>}
+
+        {/* STORAGE */}
+        {tab === "storage" && <>
+          <div style={{ color: "#ffff00", fontSize: 13, marginBottom: 16 }}>💾 ARMAZENAMENTO LOCAL</div>
+          <div style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: 8, padding: 14, marginBottom: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, borderBottom: "1px solid #1a1a1a", paddingBottom: 8 }}>
+              <span style={{ color: "#888", fontSize: 11 }}>TOTAL USADO:</span>
+              <span style={{ color: "#00ff88", fontWeight: 700 }}>{LS.usage().totalKB} KB</span>
+            </div>
+            {LS.usage().items.length === 0
+              ? <div style={{ color: "#333", fontSize: 12 }}>Nenhuma chave fab_ encontrada.</div>
+              : LS.usage().items.map((item, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: "1px solid #0f0f0f", fontSize: 12 }}>
+                  <span style={{ color: "#00ff88" }}>{item.k}</span>
+                  <span style={{ color: "#555" }}>{item.sz}</span>
+                </div>
+              ))
+            }
+          </div>
+          <div style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: 8, padding: 14 }}>
+            <div style={{ color: "#888", fontSize: 11, marginBottom: 10 }}>REGISTROS:</div>
+            {[["fab_orders",`${orders.length} pedidos`],["fab_clients",`${clients.length} clientes`]].map(([k,v]) => (
+              <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 12 }}>
+                <span style={{ color: "#555" }}>{k}</span>
+                <span style={{ color: "#00ff88" }}>{v}</span>
+              </div>
+            ))}
+          </div>
+        </>}
+      </div>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\screens\PedidoCart.js ---
+
+import React from "react";
+import { Hdr }         from "../components/Hdr";
+import { Btn }         from "../components/Btn";
+import { ItemBuilder } from "../components/ItemBuilder";
+import { san, fmtR, getPrecoItem } from "../utils/helpers";
+import { pk, pkL } from "../utils/constants";
+
+export function PedidoCart({
+  cart, setCart, setScreen,
+  editIdx, setEditIdx,
+  addingIt, setAddingIt,
+  taxaReg, cartFinal, cartCaucao, cartSaldo,
+  cfg, TIPOS,
+}) {
+  return (
+    <div style={{ fontFamily: "'Nunito',sans-serif", background: "#FDF6FB", minHeight: "100vh" }}>
+      <Hdr
+        title="🛒 Carrinho"
+        onBack={() => setScreen("pedido-info")}
+        right={cart.length > 0
+          ? <span style={{ background: pk, color: "#fff", borderRadius: 20, padding: "2px 10px", fontSize: 13, fontWeight: 800 }}>{cart.length}</span>
+          : null
+        }
+      />
+
+      <div style={{ padding: 16, maxWidth: 500, margin: "0 auto" }}>
+
+        {/* Carrinho vazio */}
+        {cart.length === 0 && !addingIt && (
+          <div style={{ textAlign: "center", padding: "40px 0", color: "#888" }}>
+            <div style={{ fontSize: 40, marginBottom: 8 }}>🛒</div>
+            <p>Seu carrinho está vazio.</p>
+            <Btn ch="← Voltar" onClick={() => setScreen("pedido-info")} />
+          </div>
+        )}
+
+        {/* Itens */}
+        {cart.map((it, idx) => {
+          const preco = getPrecoItem(it, cfg?.adicionalGourmet);
+          const isU   = it.tipo === "upsell";
+          const prod  = TIPOS?.find(t => t.id === it.tipo) ?? null;
+          const nome  = isU ? it.nome : (prod?.nome ?? "Item");
+
+          return editIdx === idx ? (
+            <div key={idx} className="fu">
+              <ItemBuilder
+                init={it}
+                isEdit
+                gAdic={cfg?.adicionalGourmet}
+                tipos={TIPOS}
+                onSave={u => { setCart(p => san(p.map((x, i) => i === idx ? u : x))); setEditIdx(null); }}
+                onCancel={() => setEditIdx(null)}
+              />
+            </div>
+          ) : (
+            <div key={idx} className="hov" style={{ background: "#fff", border: `1px solid ${pkL}`, borderLeft: `4px solid ${pk}`, borderRadius: 14, padding: 14, marginBottom: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <div style={{ flex: 1 }}>
+                  {prod?.fotoUrl && !isU && (
+                    <img src={prod.fotoUrl} style={{ width: 60, height: 40, objectFit: "cover", borderRadius: 8, marginBottom: 6 }} onError={e => { e.target.style.display = "none"; }} alt="" />
+                  )}
+                  <div style={{ fontWeight: 800, fontSize: 14, color: pk }}>{nome}</div>
+                  {!isU && (
+                    <div>
+                      {[
+                        it.fatias  ? `${it.fatias}fx (${it.formato})` : null,
+                        it.massa && it.tipo !== "docinhos" && it.tipo !== "bento" ? it.massa : null,
+                        it.recheio1 || null,
+                        it.recheio2 || null,
+                      ].filter(Boolean).map((x, i) => (
+                        <div key={i} style={{ fontSize: 12, color: "#888" }}>{x}</div>
+                      ))}
+                    </div>
+                  )}
+                  {preco != null && <div style={{ fontSize: 14, fontWeight: 800, color: pk, marginTop: 6 }}>{fmtR(preco)}</div>}
+                </div>
+                <div style={{ display: "flex", gap: 6, alignItems: "flex-start" }}>
+                  {!isU && (
+                    <button onClick={() => setEditIdx(idx)} style={{ background: pkL, color: pk, border: "none", borderRadius: 8, padding: "5px 10px", cursor: "pointer" }}>✏️</button>
+                  )}
+                  <button onClick={() => setCart(p => p.filter((_, i) => i !== idx))} style={{ background: "#FEF2F2", color: "#DC2626", border: "none", borderRadius: 8, padding: "5px 10px", cursor: "pointer" }}>🗑</button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Adicionar item */}
+        {addingIt && editIdx === null ? (
+          <div className="fu">
+            <ItemBuilder
+              gAdic={cfg?.adicionalGourmet}
+              tipos={TIPOS}
+              onSave={it => { setCart(p => san([...p, it])); setAddingIt(false); }}
+              onCancel={() => setAddingIt(false)}
+            />
+          </div>
+        ) : (
+          <button
+            onClick={() => setAddingIt(true)}
+            style={{ width: "100%", border: `2px dashed ${pk}`, borderRadius: 14, padding: 14, background: "none", color: pk, fontSize: 14, fontWeight: 800, marginBottom: 14, cursor: "pointer" }}
+          >
+            + Adicionar item
+          </button>
+        )}
+
+        {/* Resumo e avançar */}
+        {cart.length > 0 && editIdx === null && !addingIt && (
+          <>
+            <div style={{ background: "#fff", border: `2px solid ${pkL}`, borderRadius: 14, padding: 14, marginBottom: 14 }}>
+              {taxaReg > 0 && (
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#888" }}>
+                  <span>Taxa de entrega</span><span>{fmtR(taxaReg)}</span>
+                </div>
+              )}
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 15, fontWeight: 900 }}>
+                <span>Total</span><span style={{ color: pk }}>{fmtR(cartFinal)}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#BE185D", fontWeight: 700 }}>
+                <span>Caução (50%)</span><span>{fmtR(cartCaucao)}</span>
+              </div>
+              {cartSaldo > 0 && (
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 900, color: "#B45309", marginTop: 6, background: "#FFFBEB", padding: "4px 8px", borderRadius: 6 }}>
+                  <span>💳 SALDO A COBRAR</span><span>{fmtR(cartSaldo)}</span>
+                </div>
+              )}
+            </div>
+            <Btn ch="Ver sugestões e confirmar →" onClick={() => setScreen("pedido-confirm")} />
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\screens\PedidoConfirm.js ---
+
+import React from "react";
+import { Hdr } from "../components/Hdr";
+import { Card } from "../components/Card";
+import { Btn, BtnS } from "../components/Btn";
+import { fmtDt, fmtR, getPrecoItem } from "../utils/helpers";
+import { pk, pkL } from "../utils/constants";
+
+export function PedidoConfirm({
+  cart, pedInfo, clientUser, cfg, taxaReg,
+  cartFinal, cartCaucao, cartSaldo,
+  setScreen, setUpsellOpen, TIPOS
+}) {
+  return (
+    <div style={{ fontFamily: "'Nunito',sans-serif", background: "#FDF6FB", minHeight: "100vh" }}>
+      <Hdr title="📋 Confirmar pedido" onBack={() => setScreen("pedido-cart")} />
+      
+      <div style={{ padding: 16, maxWidth: 500, margin: "0 auto" }}>
+        <Card ch={
+          <>
+            <div style={{ fontWeight: 900, fontSize: 16 }}>{clientUser?.nome || "Cliente"}</div>
+            <div style={{ fontSize: 13, color: "#888", marginBottom: 8 }}>
+              📅 {fmtDt(pedInfo.entrega)}{pedInfo.hora ? ` às ${pedInfo.hora}` : ""} {pedInfo.regiao ? `· ${pedInfo.regiao.nome}` : ""}
+            </div>
+            
+            {cart.map((it, i) => {
+              const p = getPrecoItem(it, cfg?.adicionalGourmet);
+              const isU = it.tipo === "upsell";
+              const nome = isU ? it.nome : (TIPOS.find(t => t.id === it.tipo)?.nome);
+              return (
+                <div key={i} style={{ borderTop: `1px solid ${pkL}`, paddingTop: 8, marginTop: 8 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: 14 }}>
+                    <span>{nome}</span>
+                    <span style={{ color: pk }}>{p != null ? fmtR(p) : "consultar"}</span>
+                  </div>
+                </div>
+              );
+            })}
+            
+            <div style={{ borderTop: `2px solid ${pkL}`, marginTop: 12, paddingTop: 12 }}>
+              {taxaReg > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#888" }}><span>Taxa</span><span>{fmtR(taxaReg)}</span></div>}
+              <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 900, fontSize: 15 }}><span>Total</span><span style={{ color: pk }}>{fmtR(cartFinal)}</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#BE185D", fontWeight: 700 }}><span>Caução (50%)</span><span>{fmtR(cartCaucao)}</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 15, fontWeight: 900, color: "#B45309", marginTop: 6, background: "#FFFBEB", padding: "4px 8px", borderRadius: 6 }}><span>💳 SALDO A COBRAR</span><span>{fmtR(cartSaldo)}</span></div>
+            </div>
+          </>
+        } />
+        
+        <Btn ch="✅ Confirmar pedido" onClick={() => setUpsellOpen(true)} />
+        <BtnS ch="← Editar" st={{ marginTop: 8 }} onClick={() => setScreen("pedido-cart")} />
+      </div>
+    </div>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\screens\PedidoDone.js ---
+
+import React, { useState } from "react";
+import { Btn, BtnS }    from "../components/Btn";
+import { PageWrapper }  from "../components/PageWrapper";
+import { fmtR }         from "../utils/helpers";
+import { PIX_KEY, pkD } from "../utils/constants";
+
+export function PedidoDoneScreen({
+  caucao, wppUrl, onClientArea, onHome,
+  hasClient, total, saldo,
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const mensagem = total
+    ? `Olá, seu pedido ficou no valor total de ${fmtR(total)}. Foi pago ${fmtR(caucao)} de entrada. SALDO A COBRAR: ${fmtR(saldo)}.`
+    : "";
+
+  return (
+    <PageWrapper>
+      <div style={{ padding: "24px 18px", maxWidth: 480, margin: "0 auto", textAlign: "center" }}>
+
+        <div style={{ fontSize: 56 }}>🎉</div>
+        <h2>Pedido enviado!</h2>
+
+        {/* PIX / Caução */}
+        {caucao > 0 && (
+          <div style={{ background: "#F0FDF4", border: "1.5px solid #BBF7D0", borderRadius: 14, padding: 16, marginBottom: 14, textAlign: "left" }}>
+            <div style={{ fontWeight: 900, color: "#15803D" }}>PIX 🟢</div>
+            <div>Caução (50%): <strong>{fmtR(caucao)}</strong></div>
+            {total   && <div>Total: <strong>{fmtR(total)}</strong></div>}
+            {saldo > 0 && (
+              <div style={{ fontWeight: 900, color: "#B45309", textTransform: "uppercase" }}>
+                💳 SALDO A COBRAR: {fmtR(saldo)}
+              </div>
+            )}
+
+            {/* Chave PIX copiável */}
+            <div style={{ background: "#fff", border: "1.5px solid #BBF7D0", borderRadius: 10, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, marginTop: 10 }}>
+              <span style={{ fontWeight: 700, color: "#333", fontSize: 14 }}>{PIX_KEY}</span>
+              <button
+                onClick={() => { navigator.clipboard?.writeText(PIX_KEY); setCopied(true); }}
+                style={{ background: "transparent", border: "1px solid #15803D", color: "#15803D", borderRadius: 8, padding: "4px 10px", cursor: "pointer", fontWeight: 700 }}
+              >
+                {copied ? "✓ Copiado!" : "Copiar"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Mensagem de saldo */}
+        {mensagem && (
+          <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 10, padding: 12, marginBottom: 14, textAlign: "left", fontWeight: 700, color: "#B45309" }}>
+            {mensagem}
+          </div>
+        )}
+
+        {/* WhatsApp */}
+        <a href={wppUrl} target="_blank" rel="noreferrer" style={{ display: "block", marginBottom: 10, textDecoration: "none" }}>
+          <Btn ch="💬 Enviar comprovante no WhatsApp" st={{ background: "#25D366" }} />
+        </a>
+
+        {hasClient && (
+          <Btn ch="Ver meus pedidos" st={{ background: pkD, marginBottom: 8 }} onClick={onClientArea} />
+        )}
+
+        <BtnS ch="Voltar ao início" onClick={onHome} />
+      </div>
+    </PageWrapper>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\screens\PedidoInfo.js ---
+
+import React from "react";
+import { Hdr }         from "../components/Hdr";
+import { Fld }         from "../components/Fld";
+import { Slct }        from "../components/Slct";
+import { Btn }         from "../components/Btn";
+import { PageWrapper } from "../components/PageWrapper";
+import { validateDate, minDt, fmtDt } from "../utils/helpers";
+
+export function PedidoInfo({ pedInfo, setPedInfo, cfg, dateErr, setDateErr, onBack, onProximo }) {
+  const isRetirada = pedInfo.regiao?.isRetirada ?? false;
+
+  const podeAvancar =
+    pedInfo.entrega &&
+    !dateErr &&
+    pedInfo.regiao &&
+    (isRetirada || !!pedInfo.enderecoEntrega);
+
+  return (
+    <PageWrapper>
+      <Hdr title="📅 Dados do pedido" onBack={onBack} />
+
+      <div style={{ padding: "18px", maxWidth: 500, margin: "0 auto" }}>
+
+        {/* Data de entrega com validação */}
+        <div style={{ marginBottom: 12 }}>
+          <label className="fld-label">Data de entrega *</label>
+          <input
+            type="date"
+            className="input-padrao"
+            value={pedInfo.entrega}
+            min={minDt(cfg?.prazoMinHoras ?? 48)}
+            style={{ border: `1px solid ${dateErr ? "#DC2626" : "#E5D0EE"}` }}
+            onChange={e => {
+              const v = e.target.value;
+              const r = validateDate(v, cfg ?? { prazoMinHoras: 48, datasTravadas: [] });
+              setDateErr(r.msg);
+              setPedInfo(x => ({ ...x, entrega: r.ok ? v : "" }));
+            }}
+          />
+          {dateErr && (
+            <div style={{ color: "#DC2626", fontSize: 12, marginTop: 3 }}>{dateErr}</div>
+          )}
+          {!dateErr && pedInfo.entrega && (
+            <div style={{ color: "#15803D", fontSize: 12, marginTop: 3 }}>✅ Data disponível</div>
+          )}
+        </div>
+
+        {/* Horário */}
+        <Fld
+          label="Horário (opcional)"
+          type="time"
+          value={pedInfo.hora ?? ""}
+          onChange={e => setPedInfo(x => ({ ...x, hora: e.target.value }))}
+        />
+
+        {/* Região */}
+        {(cfg?.regioes ?? []).length > 0 && (
+          <Slct
+            label="Região / Entrega *"
+            value={pedInfo.regiao?.id ?? ""}
+            onChange={e => {
+              const r = (cfg.regioes ?? []).find(x => String(x.id) === e.target.value);
+              setPedInfo(p => ({ ...p, regiao: r ?? null }));
+            }}
+            options={
+              <>
+                <option value="">Selecione</option>
+                {(cfg.regioes ?? []).map(r => (
+                  <option key={r.id} value={r.id}>
+                    {r.nome}
+                    {!r.isRetirada && r.taxa > 0
+                      ? ` (+R$ ${r.taxa.toFixed(2).replace(".", ",")})`
+                      : ""}
+                  </option>
+                ))}
+              </>
+            }
+          />
+        )}
+
+        {/* Endereço — só para entrega */}
+        {!isRetirada && pedInfo.regiao && (
+          <Fld
+            label="Endereço de Entrega *"
+            placeholder="Rua, número, bairro, cidade..."
+            value={pedInfo.enderecoEntrega ?? ""}
+            onChange={e => setPedInfo(x => ({ ...x, enderecoEntrega: e.target.value }))}
+          />
+        )}
+
+        {/* Observações */}
+        <Fld
+          label="Observações"
+          value={pedInfo.obs ?? ""}
+          placeholder="Ex: Alergia a amendoim, entregar de tarde..."
+          onChange={e => setPedInfo(x => ({ ...x, obs: e.target.value }))}
+        />
+
+        <Btn
+          ch="Montar meu pedido →"
+          disabled={!podeAvancar}
+          st={{ opacity: podeAvancar ? 1 : 0.5 }}
+          onClick={() => podeAvancar && onProximo()}
+        />
+      </div>
+    </PageWrapper>
+  );
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\utils\constants.js ---
+
+// ─── CONFIGURAÇÕES GERAIS ──────────────────────────────────────
+export const NOME_APP = "Fabiana Bolos";
+export const ADMIN_PASS = "Leo";
+export const PIN_MASTER = "Leo";
+export const DEV_PASS = "dev2026";
+export const PIX_KEY = "31999154485";
+export const WHATSAPP = "5531999154485";
+export const MAX_ATTEMPTS = 5;
+export const LOCK_MS = 120_000;
+export const AUTO_LOGOUT_MS = 15 * 60 * 1000;
+export const SOFT_LOCK_DAYS = 5;
+
+// Cores Padrão
+export const pk = "#E91E8C";
+export const pkD = "#C2185B";
+export const pkL = "#FFF0F8";
+
+export const DEFAULT_CFG = {
+  prazoMinHoras: 48, adicionalGourmet: 20, webhookUrl: "", licenseExpiry: "2027-12-31",
+  licenseCheckUrl: "", datasTravadas: [], dominiosAutorizados: [], coresPreset: "confeitaria",
+  regioes: [
+    { id: 1, nome: "Retirada no local", taxa: 0, isRetirada: true },
+    { id: 2, nome: "Entrega (A combinar)", taxa: 0, isRetirada: false },
+  ],
+};
+
+// ─── CARDÁPIO E PREÇOS ────────────────────────────────────────
+export const TIPOS_BASE = [
+  { id: "chantilly", nome: "Bolo Chantilly", desc: "A partir de R$ 110", fotoUrl: "" },
+  { id: "palitinhos", nome: "Palitinhos de Chocolate",desc: "A partir de R$ 130", fotoUrl: "" },
+  { id: "chocolatudo", nome: "Bolo Chocolatudo", desc: "A partir de R$ 175", fotoUrl: "" },
+  { id: "bento", nome: "Bentô Cake", desc: "R$ 50 – R$ 55", fotoUrl: "" },
+  { id: "docinhos", nome: "Docinhos", desc: "A partir de R$ 45/50 un",fotoUrl: "" },
+];
+
+export const PRECOS = {
+  chantilly: { redondo: { 12:110,20:165,30:195,40:220,60:280,100:330 }, retangular: { 25:185,50:260,80:300,100:350,120:380 } },
+  palitinhos: { redondo: { 12:130,20:185,30:220,40:240,60:310,100:370 }, retangular: { 25:200,50:260,80:330,100:390,120:420 } },
+  chocolatudo: { redondo: { 12:175,20:230,30:295,60:360 } },
+  bento: { tradicional: 50, gourmet: 55 },
+  docinhos: { tradicional: { 50:45,100:90 }, gourmet: { 50:55,100:110 } },
+};
+
+export const MASSAS = ["Baunilha", "Chocolate"];
+export const R_TRAD = ["Brigadeiro Preto","Brigadeiro Branco","Beijinho de Coco","Bicho de Pé","Churros","Doce de Leite","Doce de Leite c/ Chocolate","Mousse de Morango","Mousse de Maracujá","Mousse de Limão","Ninho","Prestígio (2 recheios)"];
+export const R_GOUR = ["Abacaxi","Ameixa","Creme de Nutella","Ganache Choc. Preto","Ganache Choc. Branco","Mousse de Chocolate","Nutella","Nozes","Ninho","Ninho c/ Morango","Pêssego","Romeu e Julieta"];
+export const R_BENTO_T = ["Brigadeiro Preto","Brigadeiro Branco","Beijinho de Coco","Doce de Leite","Mousse de Morango","Mousse de Maracujá","Ninho","Ninho c/ Morango"];
+export const R_BENTO_G = ["Nutella","Ninho com Nutella"];
+export const S_DOC_T = ["Beijinho de Coco","Brigadeiro","Brigadeiro Branco","Cajuzinho","Ele e Ela","Olho de Sogra","Ninho","Abacaxi c/ Coco","Maracujá c/ Coco","Morango c/ Coco","Limão c/ Coco"];
+export const S_DOC_G = ["Ninho com Nutella","Churros"];
+export const ALL_G = [...R_GOUR, ...R_BENTO_G];
+
+// ─── UPSELL (ADICIONAIS DO CARRINHO) ──────────────────────────
+export const UPSELL = [
+  { id:"topper", nome:"🎂 Topo de Bolo", desc:"Personalizado", preco: 18 },
+  { id:"docinhos50",nome:"🍬 Docinhos Trad.", desc:"50 unidades", preco: 45 },
+  { id:"bento_ex", nome:"🎁 Bentô Cake extra", desc:"Mini bolo 10cm", preco: 50 },
+];
+export const UPSELL_PRECOS = Object.fromEntries(UPSELL.map(u => [u.id, u.preco]));
+export const PRECOS_MESTRES = { cardapio: PRECOS, upsell: UPSELL_PRECOS };
+
+// ─── STATUS DO SISTEMA ────────────────────────────────────────
+export const STATUS_UNICO = [
+  "Aguardando Caução",
+  "Confirmado",
+  "Em Produção",
+  "Pronto para Entrega/Retirada",
+  "Finalizado",
+  "Cancelado",
+];
+
+export const STATUS_META = {
+  "Aguardando Caução": { bg:"#FFF7ED", text:"#C2410C", brd:"#FED7AA", em:"⏳" },
+  "Confirmado": { bg:"#F0FDF4", text:"#15803D", brd:"#BBF7D0", em:"✅" },
+  "Em Produção": { bg:"#FFFBEB", text:"#B45309", brd:"#FDE68A", em:"👩‍🍳" },
+  "Pronto para Entrega/Retirada": { bg:"#FAF5FF", text:"#7E22CE", brd:"#E9D5FF", em:"🎂" },
+  "Finalizado": { bg:"#F1F5F9", text:"#475569", brd:"#CBD5E1", em:"🚀" },
+  "Cancelado": { bg:"#FEF2F2", text:"#DC2626", brd:"#FECACA", em:"❌" },
+};
+
+export const STATUS_LEGACY_MAP = {
+  "aguardando caução": "Aguardando Caução",
+  "confirmado": "Confirmado",
+  "em preparo": "Em Produção",
+  "pronto": "Pronto para Entrega/Retirada",
+  "entregue": "Finalizado",
+  "cancelado": "Cancelado",
+};
+
+// ─── CSS GLOBAL ORIGINAL ──────────────────────────────────────
+export const CSS = `.page-base{font-family:'Nunito',sans-serif;background:#FDF6FB;min-height:100vh;}
+.input-padrao{width:100%;border:1px solid #E5D0EE;border-radius:10px;padding:10px 12px;font-size:14px;outline:none;background:#fff;font-family:'Nunito',sans-serif;box-sizing:border-box;}
+.fld-label{font-size:13px;font-weight:700;color:#6B4C7A;margin-bottom:4px;display:block;}
+.btn-primary{width:100%;padding:13px 18px;background:#E91E8C;color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer;}
+.btn-secondary{width:100%;padding:12px 16px;background:#FFF0F8;color:#E91E8C;border:none;border-radius:14px;font-size:14px;font-weight:700;font-family:'Nunito',sans-serif;cursor:pointer;}
+.btn-opcao{background:#fff;color:#E91E8C;border:1.5px solid #E5D0EE;border-radius:10px;padding:9px 14px;font-size:13px;font-weight:700;font-family:'Nunito',sans-serif;cursor:pointer;}
+.btn-opcao.ativo{background:#E91E8C;color:#fff;border-color:#E91E8C;}
+.card-branco{background:#fff;border:1px solid #FFF0F8;border-radius:16px;padding:16px;margin-bottom:12px;}
+.auth-wrap{background:linear-gradient(160deg,#FFF0F8,#FDF6FB);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;font-family:'Nunito',sans-serif;}
+.auth-card{background:#fff;border-radius:20px;padding:26px;width:100%;max-width:340px;box-shadow:0 4px 20px rgba(233,30,140,.08);}
+.preco-tag{background:#FFF0F8;border-radius:10px;padding:8px 14px;margin-bottom:12px;font-weight:800;color:#E91E8C;}
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:wght@700&family=Share+Tech+Mono&display=swap');
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{margin:0;background:#FDF6FB;font-family:'Nunito',sans-serif;}
+button{cursor:pointer;transition:all .15s;}
+button:active{transform:scale(0.96);}
+.fu{animation:fadeUp .3s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.hov:hover{box-shadow:0 4px 18px rgba(233,30,140,.13);transform:translateY(-1px);}
+.pulse{animation:pulse .35s ease;}
+@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.25)}100%{transform:scale(1)}}
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-thumb{background:#F9A8D4;border-radius:3px;}
+.item-img{width:100%;height:120px;object-fit:cover;border-radius:12px 12px 0 0;}
+.status-bar{display:flex;gap:4px;margin-top:8px;}
+.status-step{flex:1;height:6px;border-radius:3px;background:#E5D0EE;}
+.status-step.active{background:#E91E8C;}
+.status-step.done{background:#15803D;}
+.kernel-bg{background:#0a0a0a;color:#00ff88;font-family:'Share Tech Mono',monospace;}
+.kernel-input{background:#111;border:1px solid #00ff88;color:#00ff88;font-family:'Share Tech Mono',monospace;padding:8px 12px;border-radius:6px;width:100%;outline:none;font-size:13px;}
+.kernel-btn{background:transparent;border:1px solid #00ff88;color:#00ff88;padding:6px 14px;border-radius:6px;font-family:'Share Tech Mono',monospace;cursor:pointer;}
+.kernel-btn:hover{background:#00ff88;color:#0a0a0a;}
+.kernel-tab{background:transparent;border:none;color:#555;padding:8px 14px;font-family:'Share Tech Mono',monospace;cursor:pointer;font-size:12px;border-bottom:2px solid transparent;}
+.kernel-tab.active{color:#00ff88;border-bottom-color:#00ff88;}
+@media print{.no-print{display:none!important;}.lbl{font-family:monospace;font-size:13px;line-height:1.8;color:#000;}}
+`;
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\utils\db.js ---
+
+// src/utils/db.js
+// ─────────────────────────────────────────────────────────────────
+// Camada de dados: Firestore + localStorage como cache local.
+// O app funciona offline (lê do cache) e sincroniza quando conectar.
+// ─────────────────────────────────────────────────────────────────
+
+import {
+  collection,
+  doc,
+  getDocs,
+  setDoc,
+  deleteDoc,
+  onSnapshot,
+} from "firebase/firestore";
+import { db } from "./firebase";
+
+// ── Nomes das coleções no Firestore ───────────────────────────────
+// "fab_orders"  → coleção "orders"
+// "fab_clients" → coleção "clients"
+// "fab_cfg"     → documento único "app/config"
+// "fab_tipos"   → documento único "app/tipos"
+// "fab_maintenance" → documento único "app/maintenance"
+
+// ── Helpers internos de localStorage (cache) ──────────────────────
+const LSget = (k) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch { return null; } };
+const LSset = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+
+// ─────────────────────────────────────────────────────────────────
+// PEDIDOS
+// ─────────────────────────────────────────────────────────────────
+
+/** Busca todos os pedidos do Firestore. Retorna array. */
+export async function getOrders() {
+  try {
+    const snap = await getDocs(collection(db, "orders"));
+    const orders = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+    LSset("fab_orders", orders); // atualiza cache
+    return orders;
+  } catch {
+    // offline → usa cache
+    return LSget("fab_orders") ?? [];
+  }
+}
+
+/** Salva ou atualiza um pedido. O id do pedido vira o id do documento. */
+export async function saveOrder(order) {
+  try {
+    await setDoc(doc(db, "orders", String(order.id)), order);
+    // atualiza cache local
+    const cached = LSget("fab_orders") ?? [];
+    const idx = cached.findIndex(o => String(o.id) === String(order.id));
+    if (idx >= 0) cached[idx] = order; else cached.push(order);
+    LSset("fab_orders", cached);
+  } catch (e) {
+    console.error("saveOrder error:", e);
+  }
+}
+
+/** Salva múltiplos pedidos de uma vez (usado na sincronização inicial). */
+export async function saveAllOrders(orders) {
+  await Promise.all(orders.map(o => saveOrder(o)));
+}
+
+/** Remove um pedido. */
+export async function deleteOrder(id) {
+  try {
+    await deleteDoc(doc(db, "orders", String(id)));
+    const cached = (LSget("fab_orders") ?? []).filter(o => String(o.id) !== String(id));
+    LSset("fab_orders", cached);
+  } catch (e) {
+    console.error("deleteOrder error:", e);
+  }
+}
+
+/**
+ * Listener em tempo real para pedidos.
+ * Chama `callback(orders)` sempre que algo mudar no Firestore.
+ * Retorna a função de unsubscribe.
+ */
+export function subscribeOrders(callback) {
+  return onSnapshot(collection(db, "orders"), (snap) => {
+    const orders = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+    LSset("fab_orders", orders);
+    callback(orders);
+  }, (err) => {
+    console.error("subscribeOrders error:", err);
+    // em caso de erro, usa cache
+    callback(LSget("fab_orders") ?? []);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// CLIENTES
+// ─────────────────────────────────────────────────────────────────
+
+export async function getClients() {
+  try {
+    const snap = await getDocs(collection(db, "clients"));
+    const clients = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+    LSset("fab_clients", clients);
+    return clients;
+  } catch {
+    return LSget("fab_clients") ?? [];
+  }
+}
+
+export async function saveClient(client) {
+  try {
+    await setDoc(doc(db, "clients", String(client.id)), client);
+    const cached = LSget("fab_clients") ?? [];
+    const idx = cached.findIndex(c => String(c.id) === String(client.id));
+    if (idx >= 0) cached[idx] = client; else cached.push(client);
+    LSset("fab_clients", cached);
+  } catch (e) {
+    console.error("saveClient error:", e);
+  }
+}
+
+export async function saveAllClients(clients) {
+  await Promise.all(clients.map(c => saveClient(c)));
+}
+
+export function subscribeClients(callback) {
+  return onSnapshot(collection(db, "clients"), (snap) => {
+    const clients = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+    LSset("fab_clients", clients);
+    callback(clients);
+  }, (err) => {
+    console.error("subscribeClients error:", err);
+    callback(LSget("fab_clients") ?? []);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// CONFIGURAÇÕES (documento único: app/config)
+// ─────────────────────────────────────────────────────────────────
+
+export async function getCfg(defaultCfg) {
+  try {
+    const snap = await getDocs(collection(db, "app"));
+    const cfgDoc = snap.docs.find(d => d.id === "config");
+    if (cfgDoc) {
+      const cfg = cfgDoc.data();
+      LSset("fab_cfg", cfg);
+      return cfg;
+    }
+    return LSget("fab_cfg") ?? defaultCfg;
+  } catch {
+    return LSget("fab_cfg") ?? defaultCfg;
+  }
+}
+
+export async function saveCfg(cfg) {
+  try {
+    await setDoc(doc(db, "app", "config"), cfg);
+    LSset("fab_cfg", cfg);
+  } catch (e) {
+    console.error("saveCfg error:", e);
+    LSset("fab_cfg", cfg); // pelo menos salva local
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// TIPOS DE PRODUTO (documento único: app/tipos)
+// ─────────────────────────────────────────────────────────────────
+
+export async function getTipos(defaultTipos) {
+  try {
+    const snap = await getDocs(collection(db, "app"));
+    const tiposDoc = snap.docs.find(d => d.id === "tipos");
+    if (tiposDoc) {
+      const { lista } = tiposDoc.data();
+      LSset("fab_tipos", lista);
+      return lista;
+    }
+    return LSget("fab_tipos") ?? defaultTipos;
+  } catch {
+    return LSget("fab_tipos") ?? defaultTipos;
+  }
+}
+
+export async function saveTipos(tipos) {
+  try {
+    await setDoc(doc(db, "app", "tipos"), { lista: tipos });
+    LSset("fab_tipos", tipos);
+  } catch (e) {
+    console.error("saveTipos error:", e);
+    LSset("fab_tipos", tipos);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// MODO MANUTENÇÃO (documento único: app/maintenance)
+// ─────────────────────────────────────────────────────────────────
+
+export async function getMaintenance() {
+  try {
+    const snap = await getDocs(collection(db, "app"));
+    const mDoc = snap.docs.find(d => d.id === "maintenance");
+    if (mDoc) {
+      const { active } = mDoc.data();
+      LSset("fab_maintenance", active);
+      return active;
+    }
+    return LSget("fab_maintenance") ?? false;
+  } catch {
+    return LSget("fab_maintenance") ?? false;
+  }
+}
+
+export async function saveMaintenance(active) {
+  try {
+    await setDoc(doc(db, "app", "maintenance"), { active });
+    LSset("fab_maintenance", active);
+  } catch (e) {
+    console.error("saveMaintenance error:", e);
+    LSset("fab_maintenance", active);
+  }
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\utils\firebase.js ---
+
+// src/utils/firebase.js
+import { initializeApp } from "firebase/app";
+import { getFirestore }  from "firebase/firestore";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyCm0UriVzi3_tAp-PHwEZdACj2uv43DRI8",
+  authDomain:        "fabiana-bolos.firebaseapp.com",
+  projectId:         "fabiana-bolos",
+  storageBucket:     "fabiana-bolos.firebasestorage.app",
+  messagingSenderId: "562024231352",
+  appId:             "1:562024231352:web:b3dc193d570aa12c129f4d",
+};
+
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\utils\helpers.js ---
+
+import { PRECOS, ALL_G, PRECOS_MESTRES } from "./constants";
+
+// ─── STORAGE E CACHE ──────────────────────────────────────────
+export const LS = {
+  get: (k) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch { return null; } },
+  set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } },
+  del: (k) => { try { localStorage.removeItem(k); } catch {} },
+  check: () => { try { localStorage.setItem("_hc", "1"); return localStorage.getItem("_hc") === "1"; } catch { return false; } },
+  usage: () => {
+    try {
+      let t = 0; const items = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k?.startsWith("fab_")) {
+          const sz = (localStorage.getItem(k) || "").length * 2;
+          t += sz;
+          items.push({ k, sz: (sz / 1024).toFixed(1) + "KB" });
+        }
+      }
+      return { totalKB: (t / 1024).toFixed(1), items };
+    } catch { return { totalKB: "?", items: [] }; }
+  },
+};
+
+// ─── OBFUSCAÇÃO E SEGURANÇA ───────────────────────────────────
+export const obf = (s) => { try { return btoa(encodeURIComponent(s || "")); } catch { return s || ""; } };
+export const deobf = (s) => { try { return decodeURIComponent(atob(s || "")); } catch { return s || ""; } };
+export const obfClt = (c) => c ? { ...c, telefone: obf(c.telefone), aniversario: obf(c.aniversario || "") } : c;
+export const deobfClt = (c) => c ? { ...c, telefone: deobf(c.telefone), aniversario: deobf(c.aniversario || "") } : c;
+export const sanitizeInput = (text) => { if (!text) return ""; return String(text).replace(/[<>"'/]/g, ""); };
+
+export const gerarChecksumPedido = (pedido) => {
+  if (!pedido) return "";
+  const dados = [
+    pedido.id || "", pedido.nome || "", pedido.telefone || "",
+    pedido.entrega || "", pedido.valor || 0, pedido.caucao || 0,
+    pedido.status || "", JSON.stringify(pedido.itens || []),
+  ].join("|");
+  let hash = 0;
+  for (let i = 0; i < dados.length; i++) {
+    const char = dados.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(16).toUpperCase().padStart(8, "0");
+};
+
+// ─── UTILITÁRIOS E FORMATAÇÃO ─────────────────────────────────
+export const san = (d) => JSON.parse(JSON.stringify(d));
+export const fmtR = (v) => `R$ ${Number(v).toFixed(2).replace(".", ",")}`;
+export const fmtDt = (d) => { if (!d) return "—"; const [y, m, day] = d.split("-"); return `${day}/${m}/${y}`; };
+export const today = () => new Date().toISOString().split("T")[0];
+export const minDt = (h) => { const d = new Date(); d.setHours(d.getHours() + Number(h)); return d.toISOString().split("T")[0]; };
+
+export const maskPh = (v) => {
+  let r = v.replace(/\D/g, "").slice(0, 11);
+  if (r.length > 10) return r.replace(/^(\d\d)(\d{5})(\d{4})/, "($1) $2-$3");
+  if (r.length > 6) return r.replace(/^(\d\d)(\d{4})(\d{0,4})/, "($1) $2-$3");
+  if (r.length > 2) return r.replace(/^(\d\d)(\d{0,5})/, "($1) $2");
+  return r;
+};
+
+// ─── REGRAS DE NEGÓCIO E DATAS ────────────────────────────────
+export const isMonday = (s) => { const d = new Date(s + "T12:00:00"); return d.getDay() === 1; };
+export const isTravada = (s, arr) => (arr || []).includes(s);
+
+export const validateDate = (s, cfg) => {
+  if (!s) return { ok: false, msg: "" };
+  if (s < minDt(cfg.prazoMinHoras)) return { ok: false, msg: `⏰ Prazo mínimo ${cfg.prazoMinHoras}h. Disponível a partir de ${fmtDt(minDt(cfg.prazoMinHoras))}` };
+  if (isMonday(s)) return { ok: false, msg: "❌ Não atendemos às segundas-feiras" };
+  if (isTravada(s, cfg.datasTravadas)) return { ok: false, msg: "❌ Data bloqueada — indisponível" };
+  return { ok: true, msg: "" };
+};
+
+export const isSinalPago = (status) => ["Confirmado","Em Produção","Pronto para Entrega/Retirada","Finalizado"].includes(status);
+export const calcPontos = (cId, orders) => Math.floor(orders.filter(o => o.clienteId === cId && o.status !== "Cancelado").reduce((s, o) => s + Number(o.valor || 0), 0));
+
+// ─── MOTOR DE PRECIFICAÇÃO (O CÉREBRO) ────────────────────────
+export const calcItem = (it, gAdic = 0) => {
+  if (!it.tipo) return null;
+  if (it.tipo === "upsell") return null;
+  
+  let b = null;
+  if (it.tipo === "bento") b = PRECOS.bento[it.bentoTipo ?? "tradicional"] ?? 50;
+  else if (it.tipo === "docinhos") b = PRECOS.docinhos[it.subtipo ?? "tradicional"]?.[Number(it.quantidade ?? 50)] ?? null;
+  else b = PRECOS[it.tipo]?.[it.formato ?? "redondo"]?.[Number(it.fatias)] ?? null;
+  
+  if (b === null) return null;
+  
+  const g = (ALL_G.includes(it.recheio1) ? 1 : 0) + (ALL_G.includes(it.recheio2) ? 1 : 0);
+  return b + g * Number(gAdic);
+};
+
+export const getPrecoItem = (item, adicionalGourmet = 0) => {
+  if (!item || !item.tipo) return null;
+  if (item.tipo === "upsell" && item.upsellId) return PRECOS_MESTRES.upsell[item.upsellId] ?? null;
+  return calcItem(item, adicionalGourmet);
+};
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\App.js ---
+
+// src/App.js  ── versão refatorada ──────────────────────────────
+import React, { useState, useEffect, useRef } from "react";
+
+import { CSS, NOME_APP, TIPOS_BASE, WHATSAPP } from "./utils/constants";
+import { LS, san, getPrecoItem, fmtR, fmtDt,
+         gerarChecksumPedido, sanitizeInput, obfClt, deobfClt } from "./utils/helpers";
+
+// Custom hooks
+import { useOrders   } from "./hooks/useOrders";
+import { useClients  } from "./hooks/useClients";
+import { useCart     } from "./hooks/useCart";
+import { useSettings } from "./hooks/useSettings";
+
+// Telas
+import { Home                } from "./screens/Home";
+import { PedidoInfo          } from "./screens/PedidoInfo";
+import { PedidoCart          } from "./screens/PedidoCart";
+import { PedidoConfirm       } from "./screens/PedidoConfirm";
+import { PedidoDoneScreen    } from "./screens/PedidoDone";
+import { AdminPanel          } from "./screens/AdminPanel";
+import { AdminLoginScreen    } from "./screens/AdminLogin";
+import { ClientArea          } from "./screens/ClientArea";
+import { ClientLoginScreen   } from "./screens/ClientLogin";
+import { ClientRegisterScreen} from "./screens/ClientRegister";
+import { KernelLoginScreen   } from "./screens/KernelLogin";
+import { KernelPanel         } from "./screens/KernelPanel";
+
+// Componentes globais
+import { UpsellModal } from "./components/UpsellModal";
+import { LabelModal  } from "./components/LabelModal";
+import { PinDlg      } from "./components/PinDlg";
+
+export default function App() {
+  // ── Hooks de domínio ─────────────────────────────────────────
+  const { cfg, setCfg }                         = useSettings();
+  const { orders, addOrder, updateOrd, removeOrd, setOrders } = useOrders(cfg.adicionalGourmet);
+  const { clients, addClient, preRegisterClient, updateClient, setClients } = useClients();
+  const { cart, setCart, editIdx, setEditIdx, addingIt, setAddingIt,
+          calcTotals, resetCart }               = useCart(cfg.adicionalGourmet);
+
+  // ── Estado local de navegação/sessão ─────────────────────────
+  const [screen,      setScreen]     = useState("home");
+  const [clientUser,  setClientUser] = useState(() => {
+    const s = LS.get("fab_session"); return s ? deobfClt(s) : null;
+  });
+  const [maintenanceMode, setMaintenanceMode] = useState(() => LS.get("fab_maintenance") ?? false);
+  const [tipos,  setTipos]  = useState(() => LS.get("fab_tipos") ?? san(TIPOS_BASE));
+  const TIPOS = tipos?.length ? tipos : TIPOS_BASE;
+
+  // ── Pedido em construção ──────────────────────────────────────
+  const [pedInfo, setPedInfo] = useState({ entrega: "", hora: "", obs: "", regiao: null, enderecoEntrega: "" });
+  const [dateErr, setDateErr] = useState("");
+
+  // ── Modais ────────────────────────────────────────────────────
+  const [upsellOpen, setUpsellOpen] = useState(false);
+  const [labelOrd,   setLabelOrd]   = useState(null);
+  const [pinDlg,     setPinDlg]     = useState(null);
+  const [doneData,   setDoneData]   = useState({ caucao: 0, wppUrl: "", total: null, saldo: null });
+
+  // ── Segurança: lock admin ─────────────────────────────────────
+  const [lockedUntil, setLockedUntil] = useState(() => LS.get("fab_lockuntil") ?? 0);
+  const [lockLeft,    setLockLeft]    = useState(0);
+  const loginAttempts = useRef(0);
+  const lastActivity  = useRef(Date.now());
+  const autoLogoutRef = useRef(null);
+
+  // ── Logo click (5→admin, 7→kernel) ───────────────────────────
+  const [clickCt, setClickCt] = useState(0);
+  const clickTimer = useRef(null);
+  const handleLogoClick = () => {
+    setClickCt(p => {
+      const n = p + 1;
+      if (n >= 7) { setScreen("kernel-login"); clearTimeout(clickTimer.current); return 0; }
+      if (n === 5) setScreen("admin-login");
+      return n;
+    });
+    clearTimeout(clickTimer.current);
+    clickTimer.current = setTimeout(() => setClickCt(0), 3000);
+  };
+
+  // ── Totais do carrinho ────────────────────────────────────────
+  const taxaReg = pedInfo.regiao?.isRetirada ? 0 : Number(pedInfo.regiao?.taxa || 0);
+  const { cartFinal, cartCaucao, cartSaldo } = calcTotals(taxaReg);
+
+  // ── Persistência ─────────────────────────────────────────────
+  useEffect(() => { LS.set("fab_maintenance", maintenanceMode); }, [maintenanceMode]);
+  useEffect(() => { LS.set("fab_tipos", tipos); },               [tipos]);
+  useEffect(() => {
+    try {
+      if (clientUser) localStorage.setItem("fab_session", JSON.stringify(obfClt(clientUser)));
+      else            localStorage.removeItem("fab_session");
+    } catch {}
+  }, [clientUser]);
+
+  // ── Lock timer ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!lockedUntil || Date.now() >= lockedUntil) return;
+    const iv = setInterval(() => {
+      const left = Math.ceil((lockedUntil - Date.now()) / 1000);
+      setLockLeft(Math.max(0, left));
+      if (left <= 0) { setLockedUntil(0); LS.set("fab_lockuntil", 0); loginAttempts.current = 0; clearInterval(iv); }
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [lockedUntil]);
+
+  // ── Auto-logout admin (15 min) ────────────────────────────────
+  useEffect(() => {
+    if (screen !== "admin") return;
+    const track = () => { lastActivity.current = Date.now(); };
+    window.addEventListener("click",      track);
+    window.addEventListener("touchstart", track);
+    autoLogoutRef.current = setInterval(() => {
+      if (Date.now() - lastActivity.current > 15 * 60 * 1000) setScreen("home");
+    }, 30000);
+    return () => {
+      clearInterval(autoLogoutRef.current);
+      window.removeEventListener("click",      track);
+      window.removeEventListener("touchstart", track);
+    };
+  }, [screen]);
+
+  // ── Helper: reset pedido ──────────────────────────────────────
+  const resetPed = () => {
+    resetCart();
+    setPedInfo({ entrega: "", hora: "", obs: "", regiao: null, enderecoEntrega: "" });
+    setDateErr("");
+  };
+
+  // ── Confirmar pedido ──────────────────────────────────────────
+  const confirmarPedidoFinal = (extraItems = []) => {
+    if (!LS.check()) return;
+    const upsellItems = extraItems.map(u => ({ tipo: "upsell", upsellId: u.id, nome: u.nome, desc: u.desc }));
+    const allCart     = [...cart, ...upsellItems];
+    const totalItens  = allCart.reduce((s, it) => s + (getPrecoItem(it, cfg.adicionalGourmet) ?? 0), 0);
+    const totalFinal  = totalItens + taxaReg;
+    const caucaoFinal = totalFinal ? Math.ceil(totalFinal * 0.5) : 0;
+    const saldoFinal  = totalFinal - caucaoFinal;
+
+    const nomeSan     = sanitizeInput(clientUser?.nome || "");
+    const obsSan      = sanitizeInput(pedInfo.obs);
+    const enderecoSan = sanitizeInput(pedInfo.enderecoEntrega || "");
+    const novoId      = Date.now() + Math.floor(Math.random() * 1000);
+
+    const novo = san({
+      id: novoId, clienteId: clientUser?.id ?? null,
+      nome: nomeSan, telefone: clientUser?.telefone ?? "",
+      endereco: enderecoSan, entrega: pedInfo.entrega,
+      hora: pedInfo.hora || "", regiao: pedInfo.regiao ?? null,
+      obs: obsSan, itens: allCart,
+      valor: totalFinal || null, caucao: caucaoFinal || null,
+      freteManual: 0, status: "Aguardando Caução",
+      criadoEm: new Date().toISOString(),
+    });
+    novo.checksum = gerarChecksumPedido(novo);
+
+    addOrder(novo);
+
+    if (clientUser) {
+      updateClient(clientUser.id, {
+        historico: [...(clientUser.historico ?? []), novo.id],
+      });
+    }
+
+    if (cfg.webhookUrl)
+      try { fetch(cfg.webhookUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(san(novo)) }); } catch {}
+
+    // ── Monta mensagem WhatsApp com template dinâmico ───────────
+    const template = cfg.wppTemplate ||
+      "Olá {NOME}! 🎂\n📅 {DATA_ENTREGA}\n💰 Total: {TOTAL}\n💳 Caução: {CAUCAO}\n📌 Saldo: {SALDO}";
+
+    const wppMsg = template
+      .replace(/{NOME}/g,          nomeSan)
+      .replace(/{TOTAL}/g,         totalFinal ? fmtR(totalFinal) : "?")
+      .replace(/{CAUCAO}/g,        fmtR(caucaoFinal))
+      .replace(/{SALDO}/g,         fmtR(saldoFinal))
+      .replace(/{DATA_ENTREGA}/g,  fmtDt(pedInfo.entrega));
+
+    const wppUrl = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(wppMsg)}`;
+
+    setDoneData({
+      caucao:  caucaoFinal,
+      wppUrl,
+      total:   totalFinal,
+      saldo:   saldoFinal,
+      pixLink: cfg.pixLink  || "",
+      cardLink:cfg.cardLink || "",
+    });
+    resetPed();
+    setScreen("pedido-done");
+  };
+
+  // ── Modais globais ────────────────────────────────────────────
+  const GlobalModais = () => (<>
+    {pinDlg    && <PinDlg   msg={pinDlg.msg} onOk={() => { pinDlg.onOk(); setPinDlg(null); }} onCancel={() => setPinDlg(null)} />}
+    {labelOrd  && <LabelModal order={labelOrd} cfg={cfg} tipos={TIPOS} onClose={() => setLabelOrd(null)} />}
+    {upsellOpen && <UpsellModal onAdd={ex => { setUpsellOpen(false); confirmarPedidoFinal(ex); }} onSkip={() => { setUpsellOpen(false); confirmarPedidoFinal([]); }} />}
+  </>);
+
+  // ── Roteamento com switch/case ────────────────────────────────
+  const renderScreen = () => {
+    switch (screen) {
+
+      case "admin-login":
+        return <AdminLoginScreen
+          onLogin={() => { loginAttempts.current = 0; lastActivity.current = Date.now(); setScreen("admin"); }}
+          onBack={() => setScreen("home")}
+          lockedUntil={lockedUntil}
+          lockLeft={lockLeft}
+        />;
+
+      case "kernel-login":
+        return <KernelLoginScreen
+          onLogin={() => setScreen("kernel")}
+          onBack={() => setScreen("home")}
+          lockedUntil={lockedUntil}
+          lockLeft={lockLeft}
+        />;
+
+      case "kernel":
+        return <KernelPanel
+          orders={orders} clients={clients} cfg={cfg}
+          maintenanceMode={maintenanceMode}
+          onSetMaintenance={setMaintenanceMode}
+          onSetLicense={d => setCfg(c => san({ ...c, licenseExpiry: d }))}
+          onSetOrders={v => setOrders(san(v))}
+          onSetClients={v => setClients(san(v))}
+          onSetCfg={v => setCfg(san(v))}
+          onBack={() => setScreen("home")}
+        />;
+
+      case "client-login":
+        return <ClientLoginScreen
+          clients={clients}
+          onLogin={c => { setClientUser(san(c)); setScreen("client-area"); }}
+          onRegister={() => setScreen("client-register")}
+          onBack={() => setScreen("home")}
+        />;
+
+      case "client-register":
+        return <ClientRegisterScreen
+          clients={clients}
+          onSave={dados => {
+            const c = addClient(dados);
+            setClientUser(c);
+            setScreen("client-area");
+          }}
+          onBack={() => setScreen("client-login")}
+        />;
+
+      case "client-area":
+        return clientUser
+          ? <ClientArea
+              clientUser={clientUser} orders={orders} tipos={TIPOS} cfg={cfg}
+              maintenanceMode={maintenanceMode}
+              onNovoPedido={() => setScreen("pedido-info")}
+              onLogout={() => { setClientUser(null); setScreen("home"); }}
+              onBack={() => setScreen("home")}
+            />
+          : null;  // redireciona no default (home)
+
+      case "pedido-done":
+        return <PedidoDoneScreen
+          caucao={doneData.caucao}  wppUrl={doneData.wppUrl}
+          total={doneData.total}    saldo={doneData.saldo}
+          pixLink={doneData.pixLink} cardLink={doneData.cardLink}
+          hasClient={!!clientUser}
+          onClientArea={() => setScreen("client-area")}
+          onHome={() => setScreen("home")}
+        />;
+
+      case "pedido-info":
+        return <PedidoInfo
+          pedInfo={pedInfo} setPedInfo={setPedInfo} cfg={cfg}
+          dateErr={dateErr} setDateErr={setDateErr}
+          onBack={() => setScreen(clientUser ? "client-area" : "home")}
+          onProximo={() => setScreen("pedido-cart")}
+        />;
+
+      case "pedido-cart":
+        return <>
+          <GlobalModais />
+          <PedidoCart
+            cart={cart} setCart={setCart} setScreen={setScreen}
+            editIdx={editIdx} setEditIdx={setEditIdx}
+            addingIt={addingIt} setAddingIt={setAddingIt}
+            taxaReg={taxaReg} cartFinal={cartFinal}
+            cartCaucao={cartCaucao} cartSaldo={cartSaldo}
+            cfg={cfg} TIPOS={TIPOS}
+          />
+        </>;
+
+      case "pedido-confirm":
+        return <>
+          <GlobalModais />
+          <PedidoConfirm
+            cart={cart} pedInfo={pedInfo} clientUser={clientUser} cfg={cfg}
+            taxaReg={taxaReg} cartFinal={cartFinal}
+            cartCaucao={cartCaucao} cartSaldo={cartSaldo}
+            setScreen={setScreen} setUpsellOpen={setUpsellOpen} TIPOS={TIPOS}
+          />
+        </>;
+
+      case "admin":
+        return <>
+          <GlobalModais />
+          <AdminPanel
+            orders={orders} setOrders={setOrders}
+            updateOrd={updateOrd} removeOrd={removeOrd}
+            cfg={cfg} setCfg={setCfg}
+            tipos={tipos} setTipos={setTipos} TIPOS={TIPOS}
+            clients={clients}
+            onPreRegisterClient={preRegisterClient}
+            maintenanceMode={maintenanceMode} setMaintenanceMode={setMaintenanceMode}
+            setPinDlg={setPinDlg} setLabelOrd={setLabelOrd}
+            onBack={() => setScreen("home")}
+          />
+        </>;
+
+      // HOME (default)
+      default:
+        return <>
+          <style>{CSS}</style>
+          <GlobalModais />
+          <Home
+            NOME_APP={NOME_APP} cart={cart} clientUser={clientUser}
+            maintenanceMode={maintenanceMode} setScreen={setScreen}
+            onLogoClick={handleLogoClick}
+            onPedido={() => {
+              if (!clientUser) { setScreen("client-login"); return; }
+              if (maintenanceMode) return;
+              setScreen("pedido-info");
+            }}
+            onLogin={() => setScreen("client-login")}
+            onAccount={() => clientUser ? setScreen("client-area") : setScreen("client-login")}
+          />
+        </>;
+    }
+  };
+
+  return <div className="App">{renderScreen()}</div>;
+}
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\index.js ---
+
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+
+--- ARQUIVO: C:\Users\LeoHl\Downloads\Gestor-main\Gestor-main\src\styles.js ---
+
+// src/styles.js
+// ─── Tokens de design centralizados ──────────────────────────────
+// Substitui os valores #E91E8C, #FFF0F8, etc. espalhados pelo código.
+// Importe Colors, Typography e Spacing onde precisar de estilo inline.
+
+export const Colors = {
+  // Primária (rosa)
+  primary:       "#E91E8C",
+  primaryLight:  "#FFF0F8",
+  primaryDark:   "#C2185B",
+
+  // Fundo e superfície
+  bg:            "#FDF6FB",
+  bgAlt:         "#FFF9F2",
+  surface:       "#ffffff",
+  border:        "#E5D0EE",
+
+  // Texto
+  textDark:      "#1A1A1A",
+  textMid:       "#333333",
+  textSoft:      "#6B4C7A",
+  textMuted:     "#888888",
+  textLight:     "#9CA3AF",
+
+  // Semânticas
+  success:       "#15803D",
+  successLight:  "#F0FDF4",
+  warning:       "#B45309",
+  warningLight:  "#FFFBEB",
+  danger:        "#DC2626",
+  dangerLight:   "#FEF2F2",
+  info:          "#7E22CE",
+  infoLight:     "#FAF5FF",
+
+  // Especiais (Home)
+  brown:         "#4A2C2A",
+  gold:          "#E6C280",
+  blush:         "#E598A8",
+  blushDark:     "#C25975",
+  pink:          "#FFC2D1",
+
+  // WhatsApp
+  wpp:           "#25D366",
+};
+
+export const Typography = {
+  fontBase:   "'Nunito', sans-serif",
+  fontSerif:  "'Playfair Display', serif",
+  fontMono:   "'Share Tech Mono', monospace",
+};
+
+export const Spacing = {
+  xs:  4,
+  sm:  8,
+  md:  12,
+  lg:  16,
+  xl:  24,
+  xxl: 32,
+};
+
+export const Radii = {
+  sm:   8,
+  md:  10,
+  lg:  14,
+  xl:  16,
+  xxl: 20,
+  pill: 999,
+};
+
+// ─── Estilo base de input reutilizável ────────────────────────────
+export const inputStyle = {
+  width:       "100%",
+  border:      `1px solid ${Colors.border}`,
+  borderRadius: Radii.md,
+  padding:     "10px 12px",
+  fontSize:    14,
+  outline:     "none",
+  background:  Colors.surface,
+  fontFamily:  Typography.fontBase,
+  boxSizing:   "border-box",
+};
